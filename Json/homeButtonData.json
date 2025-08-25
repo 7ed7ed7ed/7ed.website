@@ -1,0 +1,42 @@
+{
+  "infoBtn": {
+    "top": "20%",
+    "left": "55%",
+    "image": "images/info.png",
+    "alt": "Info",
+    "color": "rgba(1, 173, 238, 0.7)",
+    "link": "projects.html",
+    "width": "200px",
+    "height": "auto"
+  },
+  "projectsBtn": {
+    "top": "40%",
+    "left": "55%",
+    "image": "images/projects.png",
+    "alt": "Projects",
+    "color": "rgba(236, 0, 139, 0.7)",
+    "link": "projectsv2.html",
+    "width": "200px",
+    "height": "auto"
+  },
+  "galleryBtn": {
+    "top": "50%",
+    "left": "50%",
+    "image": "images/gallery.png",
+    "alt": "Gallery",
+    "color": "rgba(251, 255, 0, 0.7)",
+    "link": "index.html",
+    "width": "400px",
+    "height": "auto"
+  },
+  "bioBtn": {
+    "top": "30%",
+    "left": "50%",
+    "image": "images/bio.png",
+    "alt": "Bio",
+    "color": "rgba(52, 180, 115, 0.7)",
+    "link": "aboutPage.html",
+    "width": "200px",
+    "height": "auto"
+  }
+}
