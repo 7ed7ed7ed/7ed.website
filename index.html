@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+  <div class="stage" id="stage">
+    <!-- Poster is hidden initially; shown only after intro -->
+    <img id="referencePoster" src="images/intro-poster.png" alt="" />
+
+    <!-- First click starts video with sound; second click skips -->
+    <video id="introVideo" playsinline preload="metadata">
+      <source src="videos/website-animation.mp4" type="video/mp4" />
+      Your browser does not support HTML5 video.
+    </video>
+
+    <!-- Built from JSON; hidden until reveal -->
+    <nav class="menu" id="menu" aria-label="Main"></nav>
+  </div>
+
+  <script type="module" src="js/introGate.js"></script>
+</body>
+</html>

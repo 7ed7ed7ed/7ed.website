@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+  <div class="stage" id="stage">
+    <!-- Low‑opacity reference (final frame export) -->
+    <img id="referencePoster" src="images/intro-poster.jpg" alt="" />
+
+    <!-- Intro video (tries sound; if blocked, unmutes on first gesture) -->
+    <video id="introVideo" autoplay playsinline preload="metadata">
+      <source src="videos/wesbite-animation.mp4" type="video/mp4" />
+      Your browser does not support HTML5 video.
+    </video>
+
+    <!-- Live-text menu; hidden until intro ends or you click to skip -->
+    <nav class="menu" id="menu" aria-label="Main"></nav>
+  </div>
+
+  <!-- Build menu + intro logic -->
+  <script type="module" src="js/introGate.js"></script>
+</body>
+</html>
