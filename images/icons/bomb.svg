@@ -4,19 +4,22 @@
   <defs>
     <style>
       .st0 {
-        isolation: isolate;
-      }
-
-      .st1 {
         font-family: Wingdings2, 'Wingdings 2';
         font-size: 1000px;
       }
+
+      .st0, .st1 {
+        isolation: isolate;
+      }
     </style>
   </defs>
-  <g class="st0">
-    <g class="st0">
-      <text/>
-      <text class="st1" transform="translate(234 885.5)"><tspan x="0" y="0">]</tspan></text>
+  <g class="st1">
+    <g class="st1">
+      <g class="st1">
+        <g class="st1">
+          <text class="st0" transform="translate(234 885.5)"><tspan x="0" y="0">]</tspan></text>
+        </g>
+      </g>
     </g>
   </g>
 </svg>
