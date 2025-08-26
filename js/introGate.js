@@ -1,4 +1,4 @@
-import { loadMenu } from './menuloader.js';
+import { loadMenu } from './menuLoader.js';
 
 const video  = document.getElementById('introVideo');
 const menu   = document.getElementById('menu');

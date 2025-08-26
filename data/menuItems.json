@@ -1,14 +1,14 @@
 [
-  { "label": "bio.",       "href": "bio.html",       "x": 41, "y": 52, "size": "clamp(17.836px, 3.822vw, 61.152px)" },
-  { "label": "gallery.",   "href": "gallery.html",   "x": 48, "y": 23, "size": "clamp(17.836px, 3.822vw, 61.152px)" },
-  { "label": "info.",      "href": "info.html",      "x": 74, "y": 18, "size": "clamp(17.836px, 3.822vw, 61.152px)" },
-  { "label": "moodboard.", "href": "moodboard.html", "x": 59, "y": 42, "size": "clamp(18.2px, 3.9vw, 62.4px)" },
-  { "label": "projects.",  "href": "projects.html",  "x": 76, "y": 62, "size": "clamp(17.836px, 3.822vw, 61.152px)" },
+  { "label": "bio.",       "href": "bio.html",       "x": 41.2, "y": 52.83, "size": "clamp(17.836px, 3.822vw, 61.152px)" },
+  { "label": "gallery.",   "href": "gallery.html",   "x": 47.95, "y": 22.98, "size": "clamp(18.01436px, 3.86022vw, 61.73625px)" },
+  { "label": "info.",      "href": "info.html",      "x": 74.44, "y": 19.03, "size": "clamp(17.92518px, 3.8411vw, 61.45776px)" },
+  { "label": "moodboard.", "href": "moodboard.html", "x": 58.23, "y": 43.26, "size": "clamp(18.2px, 3.9vw, 62.4px)" },
+  { "label": "projects.",  "href": "projects.html",  "x": 75.52, "y": 62.15, "size": "clamp(18.01436px, 3.86022vw, 61.73625px)" },
   {
-  "label": "red.", "href": "red.html", "x": 91, "y": 95, "size": "clamp(17.836px, 3.822vw, 61.152px)", "color": "#ff0000" }, 
+  "label": "red.", "href": "red.html", "x": 90.76, "y": 95.73, "size": "clamp(18.01436px, 3.86022vw, 61.73625px)", "color": "#ff0000" }, 
 
-  { "label": "playlist.",  "href": "playlist.html",  "x": 34, "y": 76, "size": "clamp(17.836px, 3.822vw, 61.152px)" },
+  { "label": "playlist.",  "href": "playlist.html",  "x": 32.72, "y": 76.55, "size": "clamp(18.01436px, 3.86022vw, 61.73625px)" },
 
-  { "svg": "images/icons/bomb.svg",     "href": "bomb.html",     "x": 14, "y": 95, "iconSize": "clamp(40px, 7vw, 120px)", "ariaLabel": "bomb",     "color": "#000" },
-  { "svg": "images/icons/cassette.svg", "href": "cassette.html", "x":  9, "y": 95, "iconSize": "clamp(40px, 7vw, 120px)", "ariaLabel": "cassette", "color": "#000" }
+  { "svg": "images/icons/bomb.svg",     "href": "bomb.html",     "x": 13.36, "y": 95.55, "iconSize": "clamp(20px, 4.67vw, 120px)", "ariaLabel": "bomb",     "color": "#000" },
+  { "svg": "images/icons/cassette.svg", "href": "cassette.html", "x":  8.69, "y": 96.23, "iconSize": "clamp(20px, 5.55vw, 120px)", "ariaLabel": "cassette", "color": "#000" }
 ]
