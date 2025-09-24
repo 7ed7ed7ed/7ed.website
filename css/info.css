@@ -1,0 +1,59 @@
+/* page reset + dark canvas */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;         /* no white anywhere */
+  color: #fff;
+}
+
+/* small chip link at the very top; not sticky */
+.home-chip {
+  display: inline-block;
+  margin: 10px 12px 0;
+  padding: 6px 10px;
+  background: #fff;         /* white box */
+  color: #000;              /* black word “home” */
+  text-decoration: none;
+  font: 600 14px/1 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  border-radius: 6px;
+}
+
+/* poster fills width; page can scroll vertically if tall */
+.info-wrap { padding: 0; }
+.info-frame {
+  position: relative;       /* anchor for hotspot */
+  width: 100vw;
+}
+.info-image {
+  display: block;
+  width: 100vw;             /* full width */
+  height: auto;             /* keep aspect */
+  transition: opacity .25s ease;
+}
+
+/* circular hotspot positioned by CSS vars above */
+.theme-hotspot {
+  position: absolute;
+  left: var(--hotspot-x, 50%);
+  top:  var(--hotspot-y, 86%);
+  width:  var(--hotspot-d, 150vw);
+  height: var(--hotspot-d, 150vw);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  z-index: 10;              /* sit above the image */
+  /* debug: uncomment to visualize the clickable circle
+  outline: 2px dashed rgba(255,255,255,.4);
+  background: rgba(255,0,0,.15);
+  */
+}
+
+/* accessible focus ring if user tabs to the hotspot */
+.theme-hotspot:focus-visible {
+  outline: 3px solid rgba(255,255,255,.7);
+  outline-offset: 3px;
+}

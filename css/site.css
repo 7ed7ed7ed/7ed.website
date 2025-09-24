@@ -2,7 +2,7 @@
 html, body {
   margin: 0; padding: 0;
   height: 100%; width: 100%;
-  background: #000; color: #000;
+  background: #fff; color: #000;
   font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
   overflow-x: hidden;
 }
@@ -15,17 +15,7 @@ html, body {
   overflow: hidden;
 }
 
-/* Poster: HIDDEN until after intro finishes/skips */
-#referencePoster{
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: contain;
-  opacity: .20; pointer-events: none; z-index: 0;
-  display: none;
-}
-#referencePoster.is-visible { display: block; }
-
-/* Video uses the same box as poster */
+/* Intro video */
 #introVideo{
   position: absolute; inset: 0;
   width: 100%; height: 100%;
@@ -65,7 +55,6 @@ html, body, .stage, #introVideo {
 .menu-item.svg svg { display: block; width: clamp(40px, 7vw, 160px); height: auto; }
 
 /* Dev Align Mode (press D) */
-body.dev #referencePoster{ opacity: .35; }
 .menu.dev{ outline: 1px dashed rgba(0,0,0,.25); }
 .menu.dev::before{
   content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -88,6 +77,8 @@ body.intro-light,
 body.intro-light .stage,
 body.intro-light #introVideo { background: #fff; }
 
+body.intro-light .stage {outline: 4px solid #fff}
+
 /* smooth fades */
 html, body, .stage, #introVideo { transition: background-color .6s ease; }
 
@@ -100,10 +91,76 @@ body.dev .menu-item.dev-selected {
   outline: 2px solid rgba(0,0,0,.6);
   outline-offset: 4px;
 }
-<div class="stage">
-  <video id="introVideo" autoplay playsinline src="website-animation.mp4"></video>
-  <img id="referencePoster" src="intro-poster.jpg" alt="" />
-  <nav class="menu" id="menu"></nav>
-</div>
 
-<script type="module" src="js/main.js"></script>
+/* keep layers tidy */
+.stage { position: relative; }
+#introVideo { z-index: 0; will-change: opacity; background:#000; }
+.menu { z-index: 10; }
+
+/* after reveal, make the video non-interactive and invisible (but we don't unload it) */
+#introVideo.is-hidden {
+  opacity: 0 !important;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ===== INTRO BASICS ===== */
+html, body {
+  margin: 0; padding: 0;
+  height: 100%; width: 100%;
+  background: #fff; color: #000;
+  font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* dark vs light backdrop while intro runs */
+body.intro-dark,
+body.intro-dark .stage,
+body.intro-dark #introVideo { background: #000; }
+
+body.intro-light,
+body.intro-light .stage,
+body.intro-light #introVideo { background: #fff; }
+
+/* the stage (video container) */
+.stage { position: relative; width: 100%; height: 100vh; background: #000; overflow: hidden; }
+#introVideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 0; background:#000; }
+
+/* menu overlay we pin to the video rect */
+.menu { position: fixed; opacity: 0; pointer-events: none; z-index: 10; }
+.menu.show { opacity: 1; pointer-events: auto; }
+
+/* menu items */
+.menu-item {
+  position: absolute; transform: translate(-50%, -50%);
+  display: inline-block; text-decoration: none; cursor: pointer; user-select: none;
+  color: #000; font-weight: 800; font-size: clamp(18px, 3.2vw, 64px);
+}
+.menu-item.svg { font-size: 0; }
+.menu-item.svg svg { display: block; width: clamp(40px, 7vw, 160px); height: auto; }
+
+/* hide the video instantly once we reveal (no fade) */
+#introVideo.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* ===== MUSIC BAR (keeps page content below it) ===== */
+body { padding-top: 36px; }
+#music-bar {
+  position: fixed; inset: 0 0 auto 0; height: 36px; z-index: 9999;
+  background: #fff; color: #000; border-bottom: 1px solid #000;
+  font: 14px/36px system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+#music-bar .mb-inner {
+  display: grid; grid-template-columns: 40px 1fr 120px;
+  align-items: center; gap: 8px; height: 100%; padding: 0 8px;
+}
+#mb-play { 
+  width: 28px; height: 28px; border:1px solid #000; background:#fff; 
+  display:inline-flex; align-items:center; justify-content:center; 
+  cursor:pointer; border-radius:4px; font-size:14px; line-height:1;
+}
+#mb-play:active { transform: translateY(1px); }
+#music-bar .mb-title { overflow:hidden; white-space:nowrap; }
+#music-bar #mb-track { display:inline-block; padding-left:2px; animation: marquee 18s linear infinite; }
+@keyframes marquee { from{ transform: translateX(0);} to { transform: translateX(-50%);} }
+#mb-viz { width: 100%; height: 8px; }
+

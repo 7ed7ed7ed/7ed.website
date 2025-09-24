@@ -5,22 +5,39 @@
   <title>Home</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="css/site.css" />
+  <link rel="stylesheet" href="css/player.css" />
 </head>
 <body>
-  <div class="stage" id="stage">
-    <!-- Poster is hidden initially; shown only after intro -->
-    <img id="referencePoster" src="images/intro-poster.png" alt="" />
 
-    <!-- First click starts video with sound; second click skips -->
+  <!-- Top music bar -->
+  <div id="music-bar" data-turbo-permanent hidden>
+    <div class="mb-inner">
+      <button id="mb-play" aria-label="Play/Pause">►</button>
+      <div class="mb-title"><span id="mb-track">—</span></div>
+      <svg id="mb-viz" viewBox="0 0 100 10" aria-hidden="true">
+        <rect x="0" y="0" width="100" height="10" fill="currentColor" opacity="0.15"/>
+        <rect id="mb-progress" x="0" y="0" width="0" height="10" fill="currentColor"/>
+      </svg>
+    </div>
+    <iframe id="sc-widget" allow="autoplay"
+            style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0;"
+            src="about:blank"></iframe>
+  </div>
+
+  <div class="stage" id="stage">
     <video id="introVideo" playsinline preload="metadata">
       <source src="videos/website-animation.mp4" type="video/mp4" />
       Your browser does not support HTML5 video.
     </video>
-
-    <!-- Built from JSON; hidden until reveal -->
     <nav class="menu" id="menu" aria-label="Main"></nav>
   </div>
 
+  <!-- Intro logic -->
   <script type="module" src="js/introGate.js"></script>
+
+  <!-- SoundCloud API + Turbo + Player -->
+  <script src="https://w.soundcloud.com/player/api.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.es2017-umd.js"></script>
+  <script type="module" src="js/sc-player.js"></script>
 </body>
 </html>

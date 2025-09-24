@@ -2,7 +2,7 @@
   { "label": "bio.",       "href": "bio.html",       "x": 41.2, "y": 52.83, "size": "clamp(17.836px, 3.822vw, 61.152px)" },
   { "label": "gallery.",   "href": "gallery.html",   "x": 47.95, "y": 22.98, "size": "clamp(18.01436px, 3.86022vw, 61.73625px)" },
   { "label": "info.",      "href": "info.html",      "x": 74.44, "y": 19.03, "size": "clamp(17.92518px, 3.8411vw, 61.45776px)" },
-  { "label": "moodboard.", "href": "moodboard.html", "x": 58.23, "y": 43.26, "size": "clamp(18.2px, 3.9vw, 62.4px)" },
+  { "label": "moodboard.", "href": "moodboard.html", "x": 58.23, "y": 43.26, "size": "clamp(18px,3.9vw,62px)", "ariaLabel": "moodboard" },
   { "label": "projects.",  "href": "projects.html",  "x": 75.52, "y": 62.15, "size": "clamp(18.01436px, 3.86022vw, 61.73625px)" },
   {
   "label": "red.", "href": "red.html", "x": 90.76, "y": 95.73, "size": "clamp(18.01436px, 3.86022vw, 61.73625px)", "color": "#ff0000" }, 

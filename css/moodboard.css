@@ -1,0 +1,89 @@
+/* ========== Moodboard (masonry via CSS columns) ========== */
+
+.mb-wrap { 
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+#masonry.masonry {
+  /* column masonry */
+  column-gap: 16px;
+  padding: 16px;
+  /* start mobile-first */
+  column-count: 1;
+}
+
+/* grow columns at breakpoints */
+@media (min-width: 640px)  { #masonry.masonry { column-count: 2; } }
+@media (min-width: 900px)  { #masonry.masonry { column-count: 3; } }
+@media (min-width: 1200px) { #masonry.masonry { column-count: 4; } }
+
+/* tiles should NOT break across columns */
+.mood-tile {
+  break-inside: avoid;
+  margin: 0 0 16px 0;
+  padding: 0;
+}
+
+/* media elements fill tile width and keep aspect */
+.mood-img,
+.mood-video {
+  display: block;           /* fixes Safari column overflow issues */
+  width: 100%;
+  height: auto;             /* natural height, no stretching */
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+/* optional: make videos feel consistent */
+.mood-video {
+  outline: none;
+}
+
+/* captions, if you use them */
+.mood-tile > figcaption {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #555;
+  margin-top: 6px;
+}
+
+/* header tidying (optional) */
+.mb-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  padding: 10px 16px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+.mb-home { justify-self: start; text-decoration: none; color: #000; font-weight: 700; }
+.mb-title { justify-self: center; font-weight: 700; }
+
+
+/* Lightbox */
+.lb[hidden]{ display: none !important; }
+.lb{
+  position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.9);
+  display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: center;
+  padding: 24px;
+}
+.lb img{
+  max-width: min(92vw, 1400px);
+  max-height: 80vh;
+  border-radius: 6px;
+}
+.lb figcaption{ color: #fff; margin-top: 12px; opacity: .9; }
+.lb-close{
+  position: absolute; top: 10px; right: 12px;
+  width: 36px; height: 36px; border: 0; border-radius: 18px;
+  background: #fff; color:#000; font-size: 22px; line-height: 36px; cursor: pointer;
+}
+
+@media (max-width: 600px){
+  .mb-wrap{ padding: 10px; }
+  .masonry{ column-width: 220px; column-gap: 10px; }
+}

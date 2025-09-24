@@ -1,0 +1,45 @@
+/* Slim top bar, Wikplayer-ish */
+#top-player { position: static ; top: 0; z-index: 9999; }
+#top-player .tp-wrap {
+  display: grid;
+  grid-template-columns: auto auto auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 6px 10px;
+  background: rgba(20,20,20,.92);
+  color: #fff;
+  font: 13px/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+/* buttons */
+.tp-btn {
+  appearance: none;
+  border: 0;
+  background: #fff;
+  color: #000;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tp-btn:active { transform: translateY(1px); }
+
+/* title */
+.tp-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: .9;
+}
+
+/* progress */
+.tp-progress { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+.tp-bar { height: 6px; background: rgba(255,255,255,.2); border-radius: 999px; overflow: hidden; cursor: pointer; }
+.tp-fill { height: 100%; width: 0%; background: #fff; }
+
+/* hide the yt iframe visually (we still need it for audio) */
+#ytHost iframe { position: absolute; width: 0; height: 0; border: 0; }

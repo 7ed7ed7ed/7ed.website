@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  
+  <meta charset="utf-8" />
+  <title>Moodboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/site.css" />
+  <link rel="stylesheet" href="css/moodboard.css" />
+
+</head>
+<body class="intro-light">
+
+  <header class="mb-header">
+    <a class="mb-home" href="index.html">home.</a>
+    <div class="mb-title">moodboard.</div>
+  </header>
+
+  <main class="mb-wrap">
+    <div id="masonry" class="masonry" aria-live="polite"></div>
+  </main>
+
+  <!-- Lightbox (images only) -->
+  <div id="lightbox" class="lb" hidden>
+    <button class="lb-close" aria-label="close">×</button>
+    <img id="lbImg" alt="" />
+    <figcaption id="lbCap"></figcaption>
+  </div>
+
+  <script type="module" src="js/moodboard.js"></script>
+
+  <!-- Top music bar (permanent across pages) -->
+<div id="music-bar" data-turbo-permanent>
+  <div class="mb-inner">
+    <button id="mb-play" aria-label="Play/Pause">►</button>
+    <div class="mb-title">
+      <span id="mb-track">—</span>
+    </div>
+    <!-- simple progress graphic -->
+    <svg id="mb-viz" viewBox="0 0 100 10" aria-hidden="true">
+      <rect x="0" y="0" width="100" height="10" fill="currentColor" opacity="0.15"/>
+      <rect id="mb-progress" x="0" y="0" width="0" height="10" fill="currentColor"/>
+    </svg>
+  </div>
+
+  <!-- Hidden SoundCloud player iframe controlled via API -->
+  <iframe id="sc-widget"
+          allow="autoplay"
+          style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0;"
+          src="about:blank"></iframe>
+</div>
+
+<!-- SoundCloud Widget API -->
+<script src="https://w.soundcloud.com/player/api.js"></script>
+
+<!-- Turbo (for seamless navigation; no install needed) -->
+<script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.es2017-umd.js"></script>
+
+<!-- Your player code -->
+<script type="module" src="js/sc-player.js"></script>
+
+</body>
+</html>

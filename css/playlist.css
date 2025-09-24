@@ -1,0 +1,14 @@
+.pl-wrap { padding: 14px; }
+.pl-grid { column-width: 320px; column-gap: 14px; }
+.pl-card {
+  display: block; break-inside: avoid; margin: 0 0 14px;
+  background: #fff; border-radius: 10px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+.pl-thumb { position: relative; aspect-ratio: 16/9; background: #eee; cursor: pointer; }
+.pl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pl-thumb .pl-play {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 42px; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.6);
+}
+.pl-title { padding: 10px 12px; font: 500 14px/1.3 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
