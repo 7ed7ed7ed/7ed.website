@@ -9,15 +9,19 @@
 </head>
 <body>
 
-  <!-- Top music bar -->
-  <div id="music-bar" data-turbo-permanent hidden>
-    <div class="mb-inner">
-      <button id="mb-play" aria-label="Play/Pause">►</button>
-      <div class="mb-title"><span id="mb-track">—</span></div>
-      <svg id="mb-viz" viewBox="0 0 100 10" aria-hidden="true">
-        <rect x="0" y="0" width="100" height="10" fill="currentColor" opacity="0.15"/>
-        <rect id="mb-progress" x="0" y="0" width="0" height="10" fill="currentColor"/>
-      </svg>
+  <!-- Floating player icon -->
+  <div id="player-orb" data-turbo-permanent hidden data-phase="star" data-mode="stars">
+    <button id="orb-core" class="orb-core" type="button" aria-label="Play playlist"></button>
+    <button class="orb-star orb-star--north" type="button" aria-label="Show player controls"></button>
+    <button class="orb-star orb-star--south" type="button" aria-label="Show player controls"></button>
+    <button class="orb-star orb-star--east" type="button" aria-label="Show player controls"></button>
+    <button class="orb-star orb-star--west" type="button" aria-label="Show player controls"></button>
+    <button class="orb-star orb-star--orbit" type="button" aria-label="Show player controls"></button>
+    <button id="orb-prev" class="orb-hotspot orb-left" type="button" aria-label="Previous track"></button>
+    <button id="orb-next" class="orb-hotspot orb-right" type="button" aria-label="Next track"></button>
+    <button id="orb-exit" class="orb-exit" type="button" aria-label="Exit player view"></button>
+    <div class="orb-track" aria-live="polite">
+      <div class="orb-track__inner" id="orb-track-text">—</div>
     </div>
     <iframe id="sc-widget" allow="autoplay"
             style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0;"
@@ -31,6 +35,10 @@
     </video>
     <nav class="menu" id="menu" aria-label="Main"></nav>
   </div>
+
+  <!-- Window layer: multiple independent windows can be opened at once -->
+  <div id="window-layer" class="win-layer" aria-live="polite"></div>
+  <div id="win-dock" class="win-dock" aria-label="window dock"></div>
 
   <!-- Intro logic -->
   <script type="module" src="js/introGate.js"></script>

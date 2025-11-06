@@ -15,9 +15,9 @@ const VARIANTS = [
   "images/info/red-info(thriteen).png"
 ];
 
-document.addEventListener("DOMContentLoaded", () => {
-  const img = document.getElementById("infoImage");
-  const hotspot = document.querySelector(".theme-hotspot");
+function initInfoHotspot(root = document) {
+  const img = root.querySelector('#infoImage');
+  const hotspot = root.querySelector('.theme-hotspot');
   if (!img || !hotspot) return;
 
   // keep hotspot above image
@@ -69,4 +69,11 @@ document.addEventListener("DOMContentLoaded", () => {
       swap();
     }
   });
-});
+}
+
+if (document.readyState !== 'loading') initInfoHotspot();
+else document.addEventListener('DOMContentLoaded', () => initInfoHotspot());
+
+if (typeof window !== 'undefined') {
+  window.initInfoHotspot = initInfoHotspot;
+}

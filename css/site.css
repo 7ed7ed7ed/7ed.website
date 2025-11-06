@@ -142,25 +142,196 @@ body.intro-light #introVideo { background: #fff; }
 /* hide the video instantly once we reveal (no fade) */
 #introVideo.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
-/* ===== MUSIC BAR (keeps page content below it) ===== */
-body { padding-top: 36px; }
-#music-bar {
-  position: fixed; inset: 0 0 auto 0; height: 36px; z-index: 9999;
-  background: #fff; color: #000; border-bottom: 1px solid #000;
-  font: 14px/36px system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-}
-#music-bar .mb-inner {
-  display: grid; grid-template-columns: 40px 1fr 120px;
-  align-items: center; gap: 8px; height: 100%; padding: 0 8px;
-}
-#mb-play { 
-  width: 28px; height: 28px; border:1px solid #000; background:#fff; 
-  display:inline-flex; align-items:center; justify-content:center; 
-  cursor:pointer; border-radius:4px; font-size:14px; line-height:1;
-}
-#mb-play:active { transform: translateY(1px); }
-#music-bar .mb-title { overflow:hidden; white-space:nowrap; }
-#music-bar #mb-track { display:inline-block; padding-left:2px; animation: marquee 18s linear infinite; }
-@keyframes marquee { from{ transform: translateX(0);} to { transform: translateX(-50%);} }
-#mb-viz { width: 100%; height: 8px; }
+/* ===== FLOATING PLAYER ICON ===== */
+:root { --orb-base-size: clamp(100px, 26vw, 240px); }
 
+#player-orb {
+  position: fixed;
+  top: var(--orb-top, clamp(12px, 4vw, 32px));
+  left: var(--orb-left, clamp(12px, 4vw, 32px));
+  width: var(--orb-size, var(--orb-base-size));
+  aspect-ratio: 2404 / 2520;
+  z-index: 9999;
+  pointer-events: auto;
+  touch-action: none;
+}
+#player-orb[data-phase="star"] { --orb-size: calc(var(--orb-base-size) * 0.75); }
+#player-orb[data-phase="gods"] { --orb-size: calc(var(--orb-base-size) * 2); }
+#player-orb[hidden] { display: none !important; }
+
+#player-orb button {
+  pointer-events: auto;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+#player-orb .orb-core {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  z-index: 1;
+}
+
+#player-orb .orb-core:active { transform: none; }
+#player-orb button:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 6px;
+}
+
+#player-orb .orb-star {
+  position: absolute;
+  width: 28%;
+  height: 28%;
+  border: 0;
+  padding: 0;
+  background: rgba(0,0,0,0);
+  cursor: pointer;
+  display: none;
+  z-index: 2;
+}
+#player-orb .orb-star:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 4px;
+}
+#player-orb[data-phase="star"] .orb-star { display: block; }
+#player-orb .orb-star--north { top: 0%; left: 36%; }
+#player-orb .orb-star--south { bottom: -4%; left: 36%; }
+#player-orb .orb-star--east { top: 36%; right: -4%; }
+#player-orb .orb-star--west { top: 36%; left: -4%; }
+#player-orb .orb-star--orbit { top: 6%; left: 12%; width: 24%; }
+
+#player-orb[data-mode="playstars"] .orb-core { background-image: url('../images/icons/playstars.png'); }
+#player-orb[data-mode="stars"] .orb-core { background-image: url('../images/icons/stars.png'); }
+#player-orb[data-mode="playgods"] .orb-core { background-image: url('../images/icons/playgods.png'); }
+#player-orb[data-mode="gods"] .orb-core { background-image: url('../images/icons/gods.png'); }
+
+#player-orb .orb-hotspot {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30%;
+  height: 30%;
+  display: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100%;
+  z-index: 3;
+}
+#player-orb .orb-hotspot img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+#player-orb .orb-hotspot:focus-visible {
+  outline: 2px solid rgba(0,0,0,0.7);
+  outline-offset: 4px;
+}
+#player-orb[data-phase="gods"] .orb-hotspot { display: block; }
+#orb-prev { left: -8%; }
+#orb-next { right: -8%; }
+
+#player-orb .orb-exit {
+  position: absolute;
+  top: 6%;
+  right: 6%;
+  width: 18%;
+  height: 18%;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  display: none;
+  z-index: 3;
+}
+#player-orb .orb-exit:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 4px;
+}
+#player-orb[data-phase="gods"] .orb-exit {
+  display: block;
+}
+
+#player-orb .orb-track {
+  position: absolute;
+  bottom: -2%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110%;
+  max-width: 360px;
+  padding: 0;
+  color: #000;
+  font: 600 clamp(12px, 2vw, 20px) / 1.2 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  line-height: 1.2;
+  overflow: hidden;
+  display: none;
+  pointer-events: none;
+  z-index: 4;
+}
+#player-orb[data-phase="gods"] .orb-track { display: block; }
+#player-orb .orb-track__inner {
+  display: inline-block;
+  padding-right: 60px;
+  white-space: nowrap;
+}
+#player-orb .orb-track[data-scroll="marquee"] .orb-track__inner {
+  animation: orb-marquee 14s linear infinite;
+}
+#player-orb[data-playing="0"] .orb-track__inner {
+  animation-play-state: paused;
+}
+
+
+@keyframes orb-marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ===== PAGE MODAL ===== */
+/* Window layer + windows (multiple, draggable) */
+.win-layer { position: fixed; inset: 0; z-index: 12000; pointer-events: none; }
+.dw { position:absolute; background:#fff; color:#000; border:1px solid #000; width:min(92vw,960px); height:auto; max-height:min(92vh,900px); display:flex; flex-direction:column; overflow:hidden; pointer-events:auto; resize: both; min-width: 320px; min-height: 220px; box-shadow: none; }
+.dw.dw--fixed { resize: none; }
+.dw-header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 10px; border-bottom:1px solid #000; cursor: move; user-select:none; background:#f7f7f7; }
+.dw-title { margin:0 0 0 auto; font: 700 14px/1.2 Helvetica, "Helvetica Neue", Arial, sans-serif; text-transform: lowercase; opacity:.9; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; }
+/* macOS traffic lights */
+.dw-traffic{ display:flex; align-items:center; gap:8px; }
+.dw-dot{ appearance:none; border:1px solid rgba(0,0,0,.25); width:12px; height:12px; border-radius:50%; padding:0; cursor:pointer; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+.dw-dot:focus-visible{ outline:2px solid #000; outline-offset:1px; }
+/* macOS-like glossy gradients */
+.dw-close{ 
+  background: radial-gradient(circle at 30% 30%, #ffb3aa 0%, #ff8c83 30%, #ff605c 70%);
+  border-color: #e0443e;
+}
+.dw-min{ 
+  background: radial-gradient(circle at 30% 30%, #ffe8a3 0%, #ffd469 30%, #febc2e 70%);
+  border-color: #d9a21f;
+}
+.dw-max{ 
+  background: radial-gradient(circle at 30% 30%, #baf3c2 0%, #6fe38b 30%, #28c940 70%);
+  border-color: #1ea92f;
+}
+.dw-dot:hover{ filter: brightness(1.05); }
+.dw-body { overflow:auto; padding:10px; min-height:0; background:#fff; }
+.dw--max { left:0 !important; top:0 !important; width:100vw !important; height:100vh !important; max-height:100vh !important; }
+.dw-ghost { appearance:none; border:1px solid #000; background:#fff; color:#000; width:24px; height:24px; line-height:22px; font-size:14px; padding:0; cursor:pointer; }
+.dw--ghost .dw-ghost { background:#000; color:#fff; }
+/* Ghost mode: allow clicks to pass through window body */
+.dw.dw--ghost .dw-body { pointer-events: none; }
+
+/* Dock for minimized windows */
+.win-dock { position: fixed; left: 10px; bottom: 10px; z-index: 12001; display: flex; gap: 8px; flex-wrap: wrap; pointer-events: auto; }
+.dock-item { appearance:none; border:1px solid #000; background:#fff; color:#000; padding:6px 10px; cursor:pointer; font: 600 12px/1 Helvetica, Arial, sans-serif; text-transform: lowercase; }
+.dock-item:focus-visible { outline:2px solid #000; outline-offset:2px; }
+
+/* neutralize internal headers inside window */
+.dw-body .mb-header { display: none; }
+.dw-body .home-chip { display: none; }
+.dw-body .mb-home { border-radius:0; }

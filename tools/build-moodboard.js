@@ -30,11 +30,27 @@ if (!existsSync(IMG_DIR)) {
 
 let files = readdirSync(IMG_DIR).filter(f => ALLOWED.has(extname(f).toLowerCase()));
 
-// newest-first by mtime
+// optional captions merge (moved up so we can use "order" in sort)
+let captions = {};
+if (existsSync(CAPTIONS)) {
+  try {
+    captions = JSON.parse(readFileSync(CAPTIONS, "utf8"));
+  } catch (e) {
+    console.warn("[build-moodboard] captions.json parse error:", e.message);
+  }
+}
+
+// newest-first by creation time; allow manual ordering via captions.json { "file.jpg": { "order": 1 } }
 files.sort((a,b) => {
-  const ma = statSync(join(IMG_DIR, a)).mtimeMs;
-  const mb = statSync(join(IMG_DIR, b)).mtimeMs;
-  return mb - ma;
+  const oa = (captions[a]||{}).order; const ob = (captions[b]||{}).order;
+  const hasA = Number.isFinite(oa); const hasB = Number.isFinite(ob);
+  if (hasA && hasB) return oa - ob;
+  if (hasA) return -1; if (hasB) return 1;
+  const sa = statSync(join(IMG_DIR, a));
+  const sb = statSync(join(IMG_DIR, b));
+  const ta = (sa.birthtimeMs && !Number.isNaN(sa.birthtimeMs)) ? sa.birthtimeMs : sa.mtimeMs;
+  const tb = (sb.birthtimeMs && !Number.isNaN(sb.birthtimeMs)) ? sb.birthtimeMs : sb.mtimeMs;
+  return tb - ta;
 });
 
 // optional featured pinning (placed at the very top, preserving their order)
@@ -51,20 +67,17 @@ if (featuredList.length) {
   files = [...featuredList.filter(f => files.includes(f)), ...rest];
 }
 
-// optional captions merge
-let captions = {};
-if (existsSync(CAPTIONS)) {
-  try {
-    captions = JSON.parse(readFileSync(CAPTIONS, "utf8"));
-  } catch (e) {
-    console.warn("[build-moodboard] captions.json parse error:", e.message);
-  }
-}
+// captions already loaded above
 
 // build items
 const items = files.map(name => {
   const abs = join(IMG_DIR, name);
-  let width, height;
+  let width, height, dateAdded;
+  try {
+    const s = statSync(abs);
+    const ts = (s.birthtimeMs && !Number.isNaN(s.birthtimeMs)) ? s.birthtimeMs : s.mtimeMs;
+    dateAdded = new Date(ts).toISOString();
+  } catch {}
   try {
     const dim = sizeOf(abs);
     width = dim?.width; height = dim?.height;
@@ -73,6 +86,7 @@ const items = files.map(name => {
   return {
     src: `images/moodboard/${name}`,
     width, height,
+    dateAdded,
     caption: meta.caption || "",
     alt: meta.alt || ""
     // You can also add "link": "https://..." to any entry in captions.json if you want tiles to open a site instead of the lightbox.
@@ -83,4 +97,3 @@ const items = files.map(name => {
 const json = JSON.stringify(items, null, 2);
 writeFileSync(OUT_FILE, json);
 console.log(`[build-moodboard] wrote ${items.length} items → ${OUT_FILE}`);
-

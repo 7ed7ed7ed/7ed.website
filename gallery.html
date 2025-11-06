@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  
+  <meta charset="utf-8" />
+  <title>Gallery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/site.css" />
+  <!-- reuse moodboard styles for the gallery layout -->
+  <link rel="stylesheet" href="css/moodboard.css" />
+
+</head>
+<body class="intro-light gallery-page">
+
+  <div data-modal-root>
+    <main class="mb-wrap">
+      <div id="masonry" class="masonry" aria-live="polite"></div>
+    </main>
+
+    <!-- Lightbox (images only) -->
+    <div id="lightbox" class="lb" hidden>
+      <button class="lb-close" aria-label="close">×</button>
+      <img id="lbImg" alt="" />
+      <figcaption id="lbCap"></figcaption>
+    </div>
+  </div>
+
+  <script type="module" src="js/gallery.js"></script>
+
+  <!-- Top music bar (permanent across pages) -->
+<div id="player-orb" data-turbo-permanent hidden data-phase="star" data-mode="stars">
+  <button id="orb-core" class="orb-core" type="button" aria-label="Play playlist"></button>
+  <button class="orb-star orb-star--north" type="button" aria-label="Show player controls"></button>
+  <button class="orb-star orb-star--south" type="button" aria-label="Show player controls"></button>
+  <button class="orb-star orb-star--east" type="button" aria-label="Show player controls"></button>
+  <button class="orb-star orb-star--west" type="button" aria-label="Show player controls"></button>
+  <button class="orb-star orb-star--orbit" type="button" aria-label="Show player controls"></button>
+  <button id="orb-prev" class="orb-hotspot orb-left" type="button" aria-label="Previous track"></button>
+  <button id="orb-next" class="orb-hotspot orb-right" type="button" aria-label="Next track"></button>
+  <button id="orb-exit" class="orb-exit" type="button" aria-label="Exit player view"></button>
+  <div class="orb-track" aria-live="polite">
+    <div class="orb-track__inner" id="orb-track-text">—</div>
+  </div>
+
+  <!-- Hidden SoundCloud player iframe controlled via API -->
+  <iframe id="sc-widget"
+          allow="autoplay"
+          style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0;"
+          src="about:blank"></iframe>
+</div>
+
+<!-- SoundCloud Widget API -->
+<script src="https://w.soundcloud.com/player/api.js"></script>
+
+<!-- Turbo (for seamless navigation; no install needed) -->
+<script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.es2017-umd.js"></script>
+
+<!-- Your player code -->
+<script type="module" src="js/sc-player.js"></script>
+
+</body>
+</html>

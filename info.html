@@ -10,40 +10,40 @@
 </head>
 <body>
 
-  <!-- Simple home chip (no header) -->
-  <a class="home-chip" href="index.html">home</a>
-
-  <main class="info-wrap">
-    <!--
-      Tune the hotspot with these vars:
-      --hotspot-x:   center X of the circle (percent of image width)
-      --hotspot-y:   center Y of the circle (percent of image height)
-      --hotspot-d:   diameter relative to viewport width (vw) or image width (%)
-    -->
-    <div class="info-frame"
-         style="--hotspot-x:50%; --hotspot-y:86%; --hotspot-d:150vw;">
-      <img id="infoImage" class="info-image"
-           src="images/info/red-info(first).png"
-           alt="info poster" />
-      <!-- circular click area over the red semicircle -->
-      <button class="theme-hotspot" aria-label="Change poster"></button>
-    </div>
-  </main>
+  <div data-modal-root>
+    <main class="info-wrap">
+      <!--
+        Tune the hotspot with these vars:
+        --hotspot-x:   center X of the circle (percent of image width)
+        --hotspot-y:   center Y of the circle (percent of image height)
+        --hotspot-d:   diameter relative to viewport width (vw) or image width (%)
+      -->
+      <div class="info-frame"
+           style="--hotspot-x:50%; --hotspot-y:86%; --hotspot-d:150vw;">
+        <img id="infoImage" class="info-image"
+             src="images/info/red-info(first).png"
+             alt="info poster" />
+        <!-- circular click area over the red semicircle -->
+        <button class="theme-hotspot" aria-label="Change poster"></button>
+      </div>
+    </main>
+  </div>
 
   <script src="js/info-hotspot.js"></script>
 
   <!-- Top music bar (permanent across pages) -->
-<div id="music-bar" data-turbo-permanent>
-  <div class="mb-inner">
-    <button id="mb-play" aria-label="Play/Pause">►</button>
-    <div class="mb-title">
-      <span id="mb-track">—</span>
-    </div>
-    <!-- simple progress graphic -->
-    <svg id="mb-viz" viewBox="0 0 100 10" aria-hidden="true">
-      <rect x="0" y="0" width="100" height="10" fill="currentColor" opacity="0.15"/>
-      <rect id="mb-progress" x="0" y="0" width="0" height="10" fill="currentColor"/>
-    </svg>
+<div id="player-orb" data-turbo-permanent hidden data-phase="star" data-mode="stars">
+  <button id="orb-core" class="orb-core" type="button" aria-label="Play playlist"></button>
+  <button class="orb-star orb-star--north" type="button" aria-label="Show player controls"></button>
+  <button class="orb-star orb-star--south" type="button" aria-label="Show player controls"></button>
+  <button class="orb-star orb-star--east" type="button" aria-label="Show player controls"></button>
+  <button class="orb-star orb-star--west" type="button" aria-label="Show player controls"></button>
+  <button class="orb-star orb-star--orbit" type="button" aria-label="Show player controls"></button>
+  <button id="orb-prev" class="orb-hotspot orb-left" type="button" aria-label="Previous track"></button>
+  <button id="orb-next" class="orb-hotspot orb-right" type="button" aria-label="Next track"></button>
+  <button id="orb-exit" class="orb-exit" type="button" aria-label="Exit player view"></button>
+  <div class="orb-track" aria-live="polite">
+    <div class="orb-track__inner" id="orb-track-text">—</div>
   </div>
 
   <!-- Hidden SoundCloud player iframe controlled via API -->

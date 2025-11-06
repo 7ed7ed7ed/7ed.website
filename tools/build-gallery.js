@@ -1,0 +1,75 @@
+// tools/build-gallery.js
+// Build a data/gallery.json listing from images/gallery/*
+// Mirrors tools/build-moodboard.js but targets the gallery folder
+
+import { readdirSync, statSync, readFileSync, writeFileSync, existsSync } from 'fs';
+import { join, extname } from 'path';
+import { fileURLToPath } from 'url';
+import sizeOf from 'image-size';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+
+const IMG_DIR  = join(__dirname, '..', 'images', 'gallery');
+const OUT_FILE = join(__dirname, '..', 'data', 'gallery.json');
+
+const FEATURED = join(IMG_DIR, 'featured.txt');
+const CAPTIONS = join(IMG_DIR, 'captions.json');
+
+const ALLOWED = new Set(['.jpg','.jpeg','.png','.webp','.gif','.avif','.mp4','.mov','.webm']);
+
+if (!existsSync(IMG_DIR)) {
+  console.error(`[build-gallery] Folder not found: ${IMG_DIR}`);
+  process.exit(1);
+}
+
+let files = readdirSync(IMG_DIR).filter(f => ALLOWED.has(extname(f).toLowerCase()));
+
+let captions = {};
+if (existsSync(CAPTIONS)) {
+  try { captions = JSON.parse(readFileSync(CAPTIONS,'utf8')); } catch(e) { console.warn('[build-gallery] captions.json parse error:', e.message); }
+}
+
+// Newest-first by creation time; allow manual ordering via captions.json { "file.jpg": { "order": 1 } }
+files.sort((a,b) => {
+  const oa = (captions[a]||{}).order; 
+  const ob = (captions[b]||{}).order;
+  const hasA = Number.isFinite(oa); const hasB = Number.isFinite(ob);
+  if (hasA && hasB) return oa - ob;
+  if (hasA) return -1;
+  if (hasB) return 1;
+  const sa = statSync(join(IMG_DIR, a));
+  const sb = statSync(join(IMG_DIR, b));
+  const ta = (sa.birthtimeMs && !Number.isNaN(sa.birthtimeMs)) ? sa.birthtimeMs : sa.mtimeMs;
+  const tb = (sb.birthtimeMs && !Number.isNaN(sb.birthtimeMs)) ? sb.birthtimeMs : sb.mtimeMs;
+  return tb - ta;
+});
+
+let featuredList = [];
+if (existsSync(FEATURED)) {
+  try { featuredList = readFileSync(FEATURED,'utf8').split(/\r?\n/).map(s=>s.trim()).filter(Boolean); } catch {}
+}
+if (featuredList.length) {
+  const set = new Set(featuredList);
+  const rest = files.filter(f => !set.has(f));
+  files = [...featuredList.filter(f => files.includes(f)), ...rest];
+}
+
+// captions already loaded
+
+const items = files.map(name => {
+  const abs = join(IMG_DIR, name);
+  let width, height, dateAdded;
+  try { const s = statSync(abs); const ts = (s.birthtimeMs && !Number.isNaN(s.birthtimeMs)) ? s.birthtimeMs : s.mtimeMs; dateAdded = new Date(ts).toISOString(); } catch {}
+  try { const dim = sizeOf(abs); width = dim?.width; height = dim?.height; } catch {}
+  const meta = captions[name] || {};
+  return {
+    src: `images/gallery/${name}`,
+    width, height,
+    dateAdded,
+    caption: meta.caption || '',
+    alt: meta.alt || ''
+  };
+});
+
+writeFileSync(OUT_FILE, JSON.stringify(items, null, 2));
+console.log(`[build-gallery] wrote ${items.length} items → ${OUT_FILE}`);
