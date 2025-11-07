@@ -39,6 +39,11 @@ const MODAL_PAGE_MAP = {
   '/playlist.html': {
     window: { width: 300, height: 520, resizable: false }
   }
+  ,
+  '/projects.html': {
+    // Large window for PDF viewing
+    window: { width: 1100, height: 820, resizable: true }
+  }
 };
 
 let hasStarted = false;   // first click starts with audio
