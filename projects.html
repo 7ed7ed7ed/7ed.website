@@ -35,8 +35,8 @@
       var src = params.get('src');
       // Provide a sensible default if none supplied (update this to your PDF)
       if (!src) {
-        // TODO: replace with your intended PDF path
-        src = 'images/gallery/Final-Progress.pdf';
+        // Default to your uploaded PDF
+        src = 'images/gallery/pdf-pages.pdf';
       }
       // Hint some viewers to fit width; behavior varies by browser
       var hint = '#view=FitH';
@@ -69,4 +69,3 @@
   <script type="module" src="js/sc-player.js"></script>
 </body>
 </html>
-
