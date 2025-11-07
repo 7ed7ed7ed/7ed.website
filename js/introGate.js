@@ -49,6 +49,8 @@ const MODAL_PAGE_MAP = {
 let hasStarted = false;   // first click starts with audio
 let isRevealing = false;  // guard
 let revealTriggeredByClick = false; // whether reveal came from a user gesture
+let preOpened = [];       // [{ win, path, title }]
+let preOpenedDone = false;
 
 // remember if we’ve already shown the intro before (per tab)
 try {
@@ -89,15 +91,18 @@ if (alreadySeen) {
           video.volume = 0.9;
           await video.play();
           hasStarted = true;
+          // Pre-open blank popups sized/positioned for each functional page
+          if (!preOpenedDone) {
+            try { preOpenFunctionalWindows(); preOpenedDone = true; } catch {}
+          }
         } catch (err) {
           console.warn('[intro] play failed:', err?.name || err);
         }
         return; // don’t skip on first click
       }
 
-      // second click -> reveal; also open functional popups immediately in this gesture
+      // second click -> reveal
       revealTriggeredByClick = true;
-      try { if (typeof openFunctionalPopupsNow === 'function') openFunctionalPopupsNow(); } catch {}
       endIntroFlow();
     });
 
@@ -431,6 +436,55 @@ function setupDesktopWindows() {
     return false;
   }
 
+  // Pre-open about:blank popups during the first click; later navigate them
+  const TITLE_MAP = {
+    '/moodboard.html': 'Moodboard',
+    '/gallery.html': 'Gallery',
+    '/info.html': 'Info',
+    '/bio.html': 'bio.',
+    '/playlist.html': 'Playlist',
+    '/projects.html': 'Projects'
+  };
+
+  const getFunctionalPaths = () => [
+    '/moodboard.html',
+    '/gallery.html',
+    '/info.html',
+    '/bio.html',
+    '/playlist.html',
+    '/projects.html'
+  ];
+
+  function preOpenFunctionalWindows() {
+    const paths = getFunctionalPaths();
+    preOpened = [];
+    for (const path of paths) {
+      const cfg = MODAL_PAGE_MAP[path] || {};
+      // Reuse the openPopupWindow positioning/feature logic but target about:blank
+      const w = Math.round(cfg?.window?.width || 1000);
+      const h = Math.round(cfg?.window?.height || 760);
+      const left = Math.max(0, 40 + (popupIdx * 28) % Math.max(200, (screen.availWidth || innerWidth) - w));
+      const top  = Math.max(0,  40 + (popupIdx * 24) % Math.max(200, (screen.availHeight || innerHeight) - h));
+      popupIdx++;
+      const res = cfg?.window?.resizable === false ? 'no' : 'yes';
+      const features = `popup=yes,resizable=${res},noopener=yes,noreferrer=yes,scrollbars=yes,width=${w},height=${h},left=${left},top=${top}`;
+      let win = null;
+      try {
+        win = window.open('about:blank', '_blank', features);
+        if (win) {
+          try {
+            win.document.title = (TITLE_MAP[path] || path.replace(/^\//, '')).toLowerCase();
+            win.document.body.style.margin = '0';
+            win.document.body.style.background = '#111';
+            win.document.body.style.color = '#eee';
+            win.document.body.innerHTML = '<div style="padding:12px;font:14px/1.4 -apple-system,Segoe UI,Arial,sans-serif;">loading…</div>';
+          } catch {}
+        }
+      } catch {}
+      if (win) preOpened.push({ win, path, title: TITLE_MAP[path] || path });
+    }
+  }
+
   const handleMenuClick = (event) => {
     const link = event.target.closest('a.menu-item');
     if (!link) return;
@@ -446,18 +500,14 @@ function setupDesktopWindows() {
 
   menu.addEventListener('click', handleMenuClick);
 
-  // Helper to open all functional pages as popups (fallback to in-page windows)
-  const getFunctionalPaths = () => [
-    '/moodboard.html',
-    '/gallery.html',
-    '/info.html',
-    '/bio.html',
-    '/playlist.html',
-    '/projects.html'
-  ];
-
   const openAllFunctionalWindows = async () => {
-    // Native popups only (no in-page fallback)
+    // If we have pre-opened windows, just navigate them; otherwise attempt fresh opens
+    if (preOpened && preOpened.length) {
+      for (const item of preOpened) {
+        try { if (item.win && !item.win.closed) item.win.location.href = item.path + (item.path.includes('?') ? '&' : '?') + 'popup=1'; } catch {}
+      }
+      return;
+    }
     const paths = getFunctionalPaths();
     const blocked = [];
     for (const path of paths) {
@@ -472,7 +522,14 @@ function setupDesktopWindows() {
 
   // Synchronous variant to maximize popup success; called directly from the user click
   function openFunctionalPopupsNow() {
+    // Navigate pre-opened windows (if any); otherwise attempt fresh opens
     try {
+      if (preOpened && preOpened.length) {
+        for (const item of preOpened) {
+          try { if (item.win && !item.win.closed) item.win.location.href = item.path + (item.path.includes('?') ? '&' : '?') + 'popup=1'; } catch {}
+        }
+        return;
+      }
       const paths = getFunctionalPaths();
       const blocked = [];
       for (const path of paths) {
@@ -500,15 +557,10 @@ function setupDesktopWindows() {
     document.body.appendChild(btn);
   };
 
-  // When the intro completes, either open immediately (if user clicked) or show a button
-  // to open windows via a single user gesture (avoids popup blockers).
+  // When the intro completes, navigate the pre-opened windows.
   document.addEventListener('intro:done', async () => {
     try {
-      if (revealTriggeredByClick) {
-        await openAllFunctionalWindows();
-      } else {
-        showOpenWindowsPrompt();
-      }
+      await openAllFunctionalWindows();
     } catch (err) {
       console.warn('[intro] auto-open windows failed', err);
     }
