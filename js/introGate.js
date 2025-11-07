@@ -429,6 +429,23 @@ function setupDesktopWindows() {
 
   menu.addEventListener('click', handleMenuClick);
 
+  // When the intro is done, automatically open all functional pages in windows
+  // (based on MODAL_PAGE_MAP). Use in-page windows to avoid native popup blockers.
+  document.addEventListener('intro:done', async () => {
+    try {
+      const paths = Object.keys(MODAL_PAGE_MAP || {});
+      // Open sequentially to preserve offset stacking and reduce jank
+      for (const path of paths) {
+        // Skip root or index if ever present
+        if (!path || path === '/' || path === '/index.html') continue;
+        const cfg = MODAL_PAGE_MAP[path] || {};
+        await openWindow(path, cfg, (path || '').replace(/^\//, ''));
+      }
+    } catch (err) {
+      console.warn('[intro] auto-open windows failed', err);
+    }
+  }, { once: true });
+
   // open internal links anywhere in-window by default; Shift+click forces window even if marked
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a');
