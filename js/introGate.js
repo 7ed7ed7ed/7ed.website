@@ -48,6 +48,7 @@ const MODAL_PAGE_MAP = {
 
 let hasStarted = false;   // first click starts with audio
 let isRevealing = false;  // guard
+let revealTriggeredByClick = false; // whether reveal came from a user gesture
 
 // remember if we’ve already shown the intro before (per tab)
 try {
@@ -94,7 +95,9 @@ if (alreadySeen) {
         return; // don’t skip on first click
       }
 
-      endIntroFlow(); // second click
+      // second click -> reveal; mark as user gesture
+      revealTriggeredByClick = true;
+      endIntroFlow();
     });
 
     // auto reveal at natural end
@@ -429,25 +432,50 @@ function setupDesktopWindows() {
 
   menu.addEventListener('click', handleMenuClick);
 
-  // When the intro is done, automatically open all functional pages in windows
-  // (based on MODAL_PAGE_MAP). Use in-page windows to avoid native popup blockers.
+  // Helper to open all functional pages as popups (fallback to in-page windows)
+  const getFunctionalPaths = () => [
+    '/moodboard.html',
+    '/gallery.html',
+    '/info.html',
+    '/bio.html',
+    '/playlist.html',
+    '/projects.html'
+  ];
+
+  const openAllFunctionalWindows = async () => {
+    const paths = getFunctionalPaths();
+    for (const path of paths) {
+      const cfg = MODAL_PAGE_MAP[path] || {};
+      const title = path.replace(/^\//, '');
+      const ok = openPopupWindow(path, title, cfg);
+      if (!ok) await openWindow(path, cfg, title);
+      await new Promise(r => setTimeout(r, 60));
+    }
+  };
+
+  const showOpenWindowsPrompt = () => {
+    const btn = document.createElement('button');
+    btn.textContent = 'Open windows';
+    Object.assign(btn.style, {
+      position: 'fixed', right: '12px', bottom: '12px', zIndex: 20000,
+      padding: '10px 14px', borderRadius: '8px', border: '1px solid #666',
+      background: '#111', color: '#eee', cursor: 'pointer'
+    });
+    btn.addEventListener('click', async () => {
+      btn.remove();
+      await openAllFunctionalWindows();
+    }, { once: true });
+    document.body.appendChild(btn);
+  };
+
+  // When the intro completes, either open immediately (if user clicked) or show a button
+  // to open windows via a single user gesture (avoids popup blockers).
   document.addEventListener('intro:done', async () => {
     try {
-      // Open these known functional pages in a defined order as NATIVE popup windows
-      // (with ?popup=1). Fallback to in-page windows if blocked.
-      const paths = [
-        '/moodboard.html',
-        '/gallery.html',
-        '/info.html',
-        '/bio.html',
-        '/playlist.html',
-        '/projects.html'
-      ];
-      for (const path of paths) {
-        const cfg = MODAL_PAGE_MAP[path] || {};
-        const title = path.replace(/^\//, '');
-        const ok = openPopupWindow(path, title, cfg);
-        if (!ok) await openWindow(path, cfg, title);
+      if (revealTriggeredByClick) {
+        await openAllFunctionalWindows();
+      } else {
+        showOpenWindowsPrompt();
       }
     } catch (err) {
       console.warn('[intro] auto-open windows failed', err);
