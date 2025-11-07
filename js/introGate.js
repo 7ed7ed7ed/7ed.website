@@ -444,29 +444,31 @@ function setupDesktopWindows() {
   ];
 
   const openAllFunctionalWindows = async () => {
+    // Native popups only (no in-page fallback)
     const paths = getFunctionalPaths();
+    const blocked = [];
     for (const path of paths) {
       const cfg = MODAL_PAGE_MAP[path] || {};
       const title = path.replace(/^\//, '');
       const ok = openPopupWindow(path, title, cfg);
-      if (!ok) await openWindow(path, cfg, title);
-      await new Promise(r => setTimeout(r, 60));
+      if (!ok) blocked.push(title);
+      await new Promise(r => setTimeout(r, 50));
     }
+    if (blocked.length) console.warn('[popups] blocked:', blocked.join(', '));
   };
 
   // Synchronous variant to maximize popup success; called directly from the user click
   function openFunctionalPopupsNow() {
     try {
       const paths = getFunctionalPaths();
+      const blocked = [];
       for (const path of paths) {
         const cfg = MODAL_PAGE_MAP[path] || {};
         const title = path.replace(/^\//, '');
         const ok = openPopupWindow(path, title, cfg);
-        if (!ok) {
-          // Fallback will render inline window if popup blocked
-          openWindow(path, cfg, title);
-        }
+        if (!ok) blocked.push(title);
       }
+      if (blocked.length) console.warn('[popups] blocked:', blocked.join(', '));
     } catch (e) { /* no-op */ }
   }
 
