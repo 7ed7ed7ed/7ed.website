@@ -433,7 +433,8 @@ function setupDesktopWindows() {
   // (based on MODAL_PAGE_MAP). Use in-page windows to avoid native popup blockers.
   document.addEventListener('intro:done', async () => {
     try {
-      // Open these known functional pages in a defined order using in-page windows
+      // Open these known functional pages in a defined order as NATIVE popup windows
+      // (with ?popup=1). Fallback to in-page windows if blocked.
       const paths = [
         '/moodboard.html',
         '/gallery.html',
@@ -444,7 +445,9 @@ function setupDesktopWindows() {
       ];
       for (const path of paths) {
         const cfg = MODAL_PAGE_MAP[path] || {};
-        await openWindow(path, cfg, path.replace(/^\//, ''));
+        const title = path.replace(/^\//, '');
+        const ok = openPopupWindow(path, title, cfg);
+        if (!ok) await openWindow(path, cfg, title);
       }
     } catch (err) {
       console.warn('[intro] auto-open windows failed', err);
