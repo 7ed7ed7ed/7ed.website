@@ -95,8 +95,9 @@ if (alreadySeen) {
         return; // don’t skip on first click
       }
 
-      // second click -> reveal; mark as user gesture
+      // second click -> reveal; also open functional popups immediately in this gesture
       revealTriggeredByClick = true;
+      try { if (typeof openFunctionalPopupsNow === 'function') openFunctionalPopupsNow(); } catch {}
       endIntroFlow();
     });
 
@@ -452,6 +453,22 @@ function setupDesktopWindows() {
       await new Promise(r => setTimeout(r, 60));
     }
   };
+
+  // Synchronous variant to maximize popup success; called directly from the user click
+  function openFunctionalPopupsNow() {
+    try {
+      const paths = getFunctionalPaths();
+      for (const path of paths) {
+        const cfg = MODAL_PAGE_MAP[path] || {};
+        const title = path.replace(/^\//, '');
+        const ok = openPopupWindow(path, title, cfg);
+        if (!ok) {
+          // Fallback will render inline window if popup blocked
+          openWindow(path, cfg, title);
+        }
+      }
+    } catch (e) { /* no-op */ }
+  }
 
   const showOpenWindowsPrompt = () => {
     const btn = document.createElement('button');
