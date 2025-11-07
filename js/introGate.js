@@ -433,13 +433,18 @@ function setupDesktopWindows() {
   // (based on MODAL_PAGE_MAP). Use in-page windows to avoid native popup blockers.
   document.addEventListener('intro:done', async () => {
     try {
-      const paths = Object.keys(MODAL_PAGE_MAP || {});
-      // Open sequentially to preserve offset stacking and reduce jank
+      // Open these known functional pages in a defined order using in-page windows
+      const paths = [
+        '/moodboard.html',
+        '/gallery.html',
+        '/info.html',
+        '/bio.html',
+        '/playlist.html',
+        '/projects.html'
+      ];
       for (const path of paths) {
-        // Skip root or index if ever present
-        if (!path || path === '/' || path === '/index.html') continue;
         const cfg = MODAL_PAGE_MAP[path] || {};
-        await openWindow(path, cfg, (path || '').replace(/^\//, ''));
+        await openWindow(path, cfg, path.replace(/^\//, ''));
       }
     } catch (err) {
       console.warn('[intro] auto-open windows failed', err);
