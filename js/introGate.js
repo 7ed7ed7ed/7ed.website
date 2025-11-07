@@ -49,6 +49,8 @@ const MODAL_PAGE_MAP = {
 let hasStarted = false;   // first click starts with audio
 let isRevealing = false;  // guard
 let revealTriggeredByClick = false; // whether reveal came from a user gesture
+let preOpened = [];       // pre-opened native popups [{ win, path }]
+let preOpenedDone = false;
 
 // remember if we’ve already shown the intro before (per tab)
 try {
@@ -89,6 +91,8 @@ if (alreadySeen) {
           video.volume = 0.9;
           await video.play();
           hasStarted = true;
+          // Pre-open native popup windows (about:blank) so navigation at end works without blockers
+          if (!preOpenedDone) { try { preOpenFunctionalWindows(); preOpenedDone = true; } catch {} }
         } catch (err) {
           console.warn('[intro] play failed:', err?.name || err);
         }
@@ -399,22 +403,22 @@ function setupDesktopWindows() {
     }
   };
 
-  // Native popup helper (kept for menu interactions) — not used for auto-open now
+  // Native popup helper (used by menu and pre-open logic)
   let popupIdx = 0;
   function openPopupWindow(path, title, cfg) {
     try {
       const w = Math.round(cfg?.window?.width || 1000);
       const h = Math.round(cfg?.window?.height || 760);
-      const left = Math.max(0, 40 + (popupIdx * 28) % (screen.availWidth - w));
-      const top  = Math.max(0,  40 + (popupIdx * 24) % (screen.availHeight - h));
+      const left = Math.max(0, 40 + (popupIdx * 28) % Math.max(200, (screen.availWidth || innerWidth) - w));
+      const top  = Math.max(0,  40 + (popupIdx * 24) % Math.max(200, (screen.availHeight || innerHeight) - h));
       popupIdx++;
       const res = cfg?.window?.resizable === false ? 'no' : 'yes';
-      const features = `popup=yes,resizable=${res},scrollbars=yes,width=${w},height=${h},left=${left},top=${top}`;
-      const href = path + (path.includes('?') ? '&' : '?') + 'popup=1';
+      const features = `popup=yes,resizable=${res},scrollbars=yes,noopener=yes,noreferrer=yes,width=${w},height=${h},left=${left},top=${top}`;
+      const href = path && path !== 'about:blank' ? (path + (path.includes('?') ? '&' : '?') + 'popup=1') : 'about:blank';
       const win = window.open(href, '_blank', features);
       if (win && typeof win.focus === 'function') win.focus();
-      return !!win;
-    } catch { return false; }
+      return win || null;
+    } catch { return null; }
   }
 
   const getFunctionalPaths = () => [
@@ -426,6 +430,20 @@ function setupDesktopWindows() {
     '/projects.html'
   ];
 
+  // Pre-open blank native popups during first click
+  function preOpenFunctionalWindows() {
+    const paths = getFunctionalPaths();
+    preOpened = [];
+    for (const path of paths) {
+      const cfg = MODAL_PAGE_MAP[path] || {};
+      const win = openPopupWindow('about:blank', path.replace(/^\//,''), cfg);
+      if (win) {
+        try { win.document.title = (path.replace(/^\//,'')).toLowerCase(); } catch {}
+        preOpened.push({ win, path });
+      }
+    }
+  }
+
   const handleMenuClick = (event) => {
     const link = event.target.closest('a.menu-item');
     if (!link) return;
@@ -433,22 +451,24 @@ function setupDesktopWindows() {
     const config = MODAL_PAGE_MAP[path] || {};
     const title = link.textContent || link.getAttribute('aria-label') || '';
     event.preventDefault();
-    const ok = openPopupWindow(path, title, config);
-    if (!ok) {
-      openWindow(path, config, title);
-    }
+    openPopupWindow(path, title, config);
   };
 
   menu.addEventListener('click', handleMenuClick);
 
   const openAllFunctionalWindows = async () => {
-    // Open using the in-page desktop window UI only (no native popups)
+    // Navigate pre-opened windows if we have them; otherwise attempt fresh popups
+    if (preOpened && preOpened.length) {
+      for (const { win, path } of preOpened) {
+        try { if (win && !win.closed) win.location.href = path + (path.includes('?') ? '&' : '?') + 'popup=1'; } catch {}
+      }
+      return;
+    }
     const paths = getFunctionalPaths();
     for (const path of paths) {
       const cfg = MODAL_PAGE_MAP[path] || {};
-      const title = path.replace(/^\//, '');
-      await openWindow(path, cfg, title);
-      await new Promise(r => setTimeout(r, 60));
+      openPopupWindow(path, path.replace(/^\//,''), cfg);
+      await new Promise(r => setTimeout(r, 40));
     }
   };
 
@@ -471,10 +491,15 @@ function setupDesktopWindows() {
     document.body.appendChild(btn);
   };
 
-  // When the intro completes, open in-page windows for all functional pages.
+  // When the intro completes, open native popups (prefer pre-opened windows).
   document.addEventListener('intro:done', async () => {
     try {
-      await openAllFunctionalWindows();
+      if (preOpened && preOpened.length) {
+        await openAllFunctionalWindows();
+      } else {
+        // No pre-open (e.g., intro auto-ended without a click): show button for user gesture
+        showOpenWindowsPrompt();
+      }
     } catch (err) {
       console.warn('[intro] auto-open windows failed', err);
     }
