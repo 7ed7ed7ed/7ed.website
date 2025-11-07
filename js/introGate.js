@@ -400,22 +400,35 @@ function setupDesktopWindows() {
     }
   };
 
-  // Prefer real popup windows like handbook.org; fall back to in-page window if blocked
+  // Prefer real popup windows. Try window.open; if blocked, fall back to
+  // synthesizing anchor clicks (often allowed multiple times per gesture).
   let popupIdx = 0;
   function openPopupWindow(path, title, cfg) {
+    const w = Math.round(cfg?.window?.width || 1000);
+    const h = Math.round(cfg?.window?.height || 760);
+    const left = Math.max(0, 40 + (popupIdx * 28) % Math.max(200, (screen.availWidth || innerWidth) - w));
+    const top  = Math.max(0,  40 + (popupIdx * 24) % Math.max(200, (screen.availHeight || innerHeight) - h));
+    popupIdx++;
+    const res = cfg?.window?.resizable === false ? 'no' : 'yes';
+    const features = `popup=yes,resizable=${res},noopener=yes,noreferrer=yes,scrollbars=yes,width=${w},height=${h},left=${left},top=${top}`;
+    const href = path + (path.includes('?') ? '&' : '?') + 'popup=1';
     try {
-      const w = Math.round(cfg?.window?.width || 1000);
-      const h = Math.round(cfg?.window?.height || 760);
-      const left = Math.max(0, 40 + (popupIdx * 28) % (screen.availWidth - w));
-      const top  = Math.max(0,  40 + (popupIdx * 24) % (screen.availHeight - h));
-      popupIdx++;
-      const res = cfg?.window?.resizable === false ? 'no' : 'yes';
-      const features = `popup=yes,resizable=${res},scrollbars=yes,width=${w},height=${h},left=${left},top=${top}`;
-      const href = path + (path.includes('?') ? '&' : '?') + 'popup=1';
       const win = window.open(href, '_blank', features);
       if (win && typeof win.focus === 'function') win.focus();
-      return !!win;
-    } catch { return false; }
+      if (win) return true;
+    } catch {}
+    // Anchor-click fallback (still within the same gesture)
+    try {
+      const a = document.createElement('a');
+      a.href = href;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      // Some browsers honor windowFeatures via window.open only; anchors ignore it.
+      // We at least get separate tabs/windows with target=_blank.
+      a.click();
+      return true; // cannot know for sure, assume allowed
+    } catch {}
+    return false;
   }
 
   const handleMenuClick = (event) => {
