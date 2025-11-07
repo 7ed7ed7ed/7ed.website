@@ -155,7 +155,7 @@ body.intro-light #introVideo { background: #fff; }
   pointer-events: auto;
   touch-action: none;
 }
-#player-orb[data-phase="star"] { --orb-size: calc(var(--orb-base-size) * 0.75); }
+#player-orb[data-phase="star"] { --orb-size: calc(var(--orb-base-size) * 1.5); }
 #player-orb[data-phase="gods"] { --orb-size: calc(var(--orb-base-size) * 2); }
 #player-orb[hidden] { display: none !important; }
 
