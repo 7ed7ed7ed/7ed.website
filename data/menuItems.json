@@ -1,14 +1,14 @@
 [
-  { "label": "bio.",       "href": "bio.html",       "x": 41.2, "y": 52.83, "size": "clamp(17.836px, 3.822vw, 61.152px)" },
-  { "label": "gallery.",   "href": "gallery.html",   "x": 47.95, "y": 22.98, "size": "clamp(18.01436px, 3.86022vw, 61.73625px)" },
-  { "label": "info.",      "href": "info.html",      "x": 74.44, "y": 19.03, "size": "clamp(17.92518px, 3.8411vw, 61.45776px)" },
-  { "label": "moodboard.", "href": "moodboard.html", "x": 58.23, "y": 43.26, "size": "clamp(18px,3.9vw,62px)", "ariaLabel": "moodboard" },
-  { "label": "projects.",  "href": "projects.html",  "x": 75.52, "y": 62.15, "size": "clamp(18.01436px, 3.86022vw, 61.73625px)" },
+  { "img": "new-menu items/bio-blue.png",       "href": "bio.html",       "x": 1.33, "y": 40.58, "scale": 1.31, "iconSize": "clamp(140px, 18vw, 320px)", "ariaLabel": "bio" },
+  { "img": "new-menu items/gallery-orange.png", "href": "gallery.html",   "x": 14.03, "y": 65.33, "scale": 2.05, "iconSize": "clamp(160px, 20vw, 360px)", "ariaLabel": "gallery" },
+  { "img": "new-menu items/info-yellow.png",    "href": "info.html",      "x": 70, "y": 45.63, "scale": 1.45, "iconSize": "clamp(140px, 18vw, 320px)", "ariaLabel": "info" },
+  { "img": "new-menu items/moodboard-pink.png", "href": "moodboard.html", "x": 34.09, "y": 85.69, "scale": 2.45, "iconSize": "clamp(180px, 22vw, 400px)", "ariaLabel": "moodboard" },
+  { "img": "new-menu items/projects-white.png", "href": "projects.html",  "x": 55.92, "y": 15.27, "scale": 2.03, "iconSize": "clamp(180px, 22vw, 400px)", "ariaLabel": "projects" },
   {
-  "label": "red.", "href": "red.html", "x": 90.76, "y": 95.73, "size": "clamp(18.01436px, 3.86022vw, 61.73625px)", "color": "#ff0000" }, 
+  "img": "new-menu items/red-red.png", "href": "red.html", "x": 97.08, "y": 63.28, "scale": 0.93, "iconSize": "clamp(140px, 18vw, 320px)", "ariaLabel": "red" }, 
 
-  { "label": "playlist.",  "href": "playlist.html",  "x": 32.72, "y": 76.55, "size": "clamp(18.01436px, 3.86022vw, 61.73625px)" },
+  { "img": "new-menu items/playlist-green.png",  "href": "playlist.html",  "x": 83.6, "y": 27.48, "scale": 2.5, "iconSize": "clamp(160px, 20vw, 360px)", "ariaLabel": "playlist" },
 
-  { "svg": "images/icons/bomb.svg",     "href": "bomb.html",     "x": 13.36, "y": 95.55, "iconSize": "clamp(20px, 4.67vw, 120px)", "ariaLabel": "bomb",     "color": "#000" },
-  { "svg": "images/icons/cassette.svg", "href": "cassette.html", "x":  8.69, "y": 96.23, "iconSize": "clamp(20px, 5.55vw, 120px)", "ariaLabel": "cassette", "color": "#000" }
+  { "svg": "images/icons/bomb.svg",     "href": "bomb.html",     "x": 100, "y": 36.4, "scale": 2.5, "iconSize": "clamp(20px, 4.67vw, 120px)", "ariaLabel": "bomb",     "color": "#000" },
+  { "svg": "images/icons/cassette.svg", "href": "cassette.html", "x": 98.87, "y": 51.78, "scale": 2.5, "iconSize": "clamp(20px, 5.55vw, 120px)", "ariaLabel": "cassette", "color": "#000" }
 ]

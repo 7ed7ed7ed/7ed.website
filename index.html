@@ -10,7 +10,7 @@
 <body>
 
   <!-- Floating player icon -->
-  <div id="player-orb" data-turbo-permanent hidden data-phase="star" data-mode="stars">
+  <div id="player-orb" data-turbo-permanent hidden data-phase="gods" data-mode="gods">
     <button id="orb-core" class="orb-core" type="button" aria-label="Play playlist"></button>
     <button class="orb-star orb-star--north" type="button" aria-label="Show player controls"></button>
     <button class="orb-star orb-star--south" type="button" aria-label="Show player controls"></button>
@@ -29,8 +29,9 @@
   </div>
 
   <div class="stage" id="stage">
+    <img id="loopGif" class="stage-gif" src="videos/alpha-gif.gif" alt="" aria-hidden="true" />
     <video id="introVideo" playsinline preload="metadata">
-      <source src="videos/website-animation.mp4" type="video/mp4" />
+      <source src="videos/intro-cap.mp4" type="video/mp4" />
       Your browser does not support HTML5 video.
     </video>
     <nav class="menu" id="menu" aria-label="Main"></nav>

@@ -22,6 +22,7 @@ const INTRO_VIDEO   = document.getElementById('introVideo');
 const ORB_POS_KEY     = 'playerOrbPos:v1';
 const ORB_DEFAULT_KEY = 'playerOrbDefaultPos:v1';
 const STATE_KEY   = 'scPlayerState:v2';
+const DEFAULT_VOLUME = 10;
 
 let SCWidget        = null;
 let playlist        = [];
@@ -31,12 +32,14 @@ let index           = 0;              // actual playlist index currently loaded
 let isReady         = false;
 let isPlaying       = false;
 let pendingAction   = null;
-let phase           = 'star';
+let phase           = 'gods';
 let dragState       = null;
 let suppressClick   = false;
 let positionMs      = 0;
 let pendingSeekMs   = 0;
 let marqueeNeedsRestart = false;
+let orbDevPanel = null;
+let volumeLockTimer = null;
 
 // ---------- helpers ----------
 function widgetSrc(scUrl, autoPlay = false) {
@@ -118,8 +121,7 @@ function goPrev({ autoplay = true } = {}) {
 }
 
 function computeMode() {
-  if (phase === 'gods') return isPlaying ? 'playgods' : 'gods';
-  return isPlaying ? 'playstars' : 'stars';
+  return isPlaying ? 'playgods' : 'gods';
 }
 
 function modeLabel(mode) {
@@ -168,6 +170,7 @@ function setOrbPosition(left, top, { save = false } = {}) {
   const clampedTop  = clamp(top, bounds.minY, bounds.maxY);
   ORB.style.setProperty('--orb-left', `${clampedLeft}px`);
   ORB.style.setProperty('--orb-top', `${clampedTop}px`);
+  orbDevPanel?.__updateOrbPosition?.();
   if (save) {
     try { localStorage.setItem(ORB_POS_KEY, JSON.stringify({ left: clampedLeft, top: clampedTop })); } catch {}
   }
@@ -235,6 +238,25 @@ function applyPendingSeek() {
   pendingSeekMs = 0;
 }
 
+function applyVolume() {
+  if (!SCWidget) return;
+  try { SCWidget.setVolume(DEFAULT_VOLUME); } catch {}
+}
+
+function startVolumeLock() {
+  if (volumeLockTimer) return;
+  applyVolume();
+  volumeLockTimer = setInterval(() => {
+    applyVolume();
+  }, 1000);
+}
+
+function stopVolumeLock() {
+  if (!volumeLockTimer) return;
+  clearInterval(volumeLockTimer);
+  volumeLockTimer = null;
+}
+
 function restoreOrbPosition() {
   if (!ORB) return;
   try {
@@ -262,7 +284,13 @@ function resetToDefaultPosition() {
 
 function clampOrbToViewport() {
   if (!ORB) return;
+  // Skip clamping if the orb is hidden (rect will be 0,0 and would wrongly save top-left)
+  try {
+    if (ORB.hasAttribute('hidden') || getComputedStyle(ORB).display === 'none') return;
+  } catch {}
   const rect = ORB.getBoundingClientRect();
+  // If not laid out yet, bail (prevents saving 0,0)
+  if (!rect || rect.width === 0 || rect.height === 0) return;
   setOrbPosition(rect.left, rect.top, { save: true });
 }
 
@@ -276,11 +304,9 @@ function ensureGodsPhase() {
 }
 
 function exitToStars() {
-  if (phase !== 'star') {
-    phase = 'star';
-    syncVisualState();
-    saveState();
-  }
+  phase = 'gods';
+  updatePlayingState(false);
+  syncVisualState();
   clampOrbToViewport();
 }
 
@@ -297,6 +323,7 @@ function requestPlay() {
     return;
   }
   pendingAction = null;
+  applyVolume();
   try { SCWidget.play(); } catch {}
 }
 
@@ -395,6 +422,7 @@ function initWidget(url, autoPlay = false) {
   setTimeout(() => {
     SCWidget = window.SC?.Widget?.(WIDGET_IFRAME) || null;
     bindWidgetEvents();
+    setTimeout(() => applyVolume(), 150);
   }, 0);
 }
 
@@ -409,6 +437,7 @@ function bindWidgetEvents() {
 
   SCWidget.bind(Events.READY, () => {
     isReady = true;
+    applyVolume();
     if (pendingAction === 'play') {
       pendingAction = null;
       SCWidget.play();
@@ -424,6 +453,8 @@ function bindWidgetEvents() {
 
   SCWidget.bind(Events.PLAY, () => {
     updatePlayingState(true);
+    applyVolume();
+    startVolumeLock();
     SCWidget.getCurrentSound((sound) => {
       if (sound?.title) setTrackTitle(sound.title);
     });
@@ -432,9 +463,11 @@ function bindWidgetEvents() {
 
   SCWidget.bind(Events.PAUSE, () => {
     updatePlayingState(false);
+    stopVolumeLock();
   });
 
   SCWidget.bind(Events.FINISH, () => {
+    stopVolumeLock();
     goNext({ autoplay: true });
   });
 
@@ -442,6 +475,7 @@ function bindWidgetEvents() {
     if (typeof e?.currentPosition === 'number') {
       positionMs = e.currentPosition;
     }
+    applyVolume();
   });
 }
 
@@ -508,6 +542,177 @@ function wireUI() {
   });
 }
 
+function setupOrbDevPanel() {
+  if (!ORB) return;
+  if (orbDevPanel) return;
+  const panel = document.createElement('div');
+  panel.id = 'orb-dev-panel';
+  panel.innerHTML = `
+    <div class="orb-dev__header" data-drag-handle>Orb tools</div>
+    <div class="orb-dev__group">
+      <label class="orb-dev__label" for="orb-scale-range">Orb scale</label>
+      <input id="orb-scale-range" class="orb-dev__range" type="range" min="0.5" max="1.6" step="0.01" />
+      <input id="orb-scale-value" class="orb-dev__value" type="number" min="0.5" max="1.6" step="0.01" />
+    </div>
+    <div class="orb-dev__divider" aria-hidden="true"></div>
+    <div class="orb-dev__group">
+      <label class="orb-dev__label" for="orb-pos-step">Position step (px)</label>
+      <input id="orb-pos-step" class="orb-dev__value" type="number" min="1" max="50" step="1" value="4" />
+      <div class="orb-dev__pos-grid">
+        <button type="button" class="orb-dev__btn" data-nudge="up" aria-label="Move up">↑</button>
+        <div class="orb-dev__pos-row">
+          <button type="button" class="orb-dev__btn" data-nudge="left" aria-label="Move left">←</button>
+          <button type="button" class="orb-dev__btn" data-nudge="right" aria-label="Move right">→</button>
+        </div>
+        <button type="button" class="orb-dev__btn" data-nudge="down" aria-label="Move down">↓</button>
+      </div>
+      <div class="orb-dev__pos-values">
+        <div>
+          <label class="orb-dev__label" for="orb-pos-x">Left (px)</label>
+          <input id="orb-pos-x" class="orb-dev__output" type="text" readonly />
+        </div>
+        <div>
+          <label class="orb-dev__label" for="orb-pos-y">Top (px)</label>
+          <input id="orb-pos-y" class="orb-dev__output" type="text" readonly />
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(panel);
+
+  const range = panel.querySelector('#orb-scale-range');
+  const valueInput = panel.querySelector('#orb-scale-value');
+  const posStep = panel.querySelector('#orb-pos-step');
+  const posX = panel.querySelector('#orb-pos-x');
+  const posY = panel.querySelector('#orb-pos-y');
+  const dragHandle = panel.querySelector('[data-drag-handle]');
+
+  const readOrbScale = () => {
+    const raw = getComputedStyle(ORB).getPropertyValue('--orb-user-scale');
+    const value = parseFloat(raw);
+    return Number.isFinite(value) ? value : 1;
+  };
+
+  const setOrbScale = (value) => {
+    const next = Number.isFinite(value) ? value : 1;
+    ORB.style.setProperty('--orb-user-scale', String(next));
+  };
+
+  const updateOrbPosition = () => {
+    const rawLeft = getComputedStyle(ORB).getPropertyValue('--orb-left');
+    const rawTop = getComputedStyle(ORB).getPropertyValue('--orb-top');
+    const left = parseFloat(rawLeft);
+    const top = parseFloat(rawTop);
+    posX.value = Number.isFinite(left) ? left.toFixed(2) : '0.00';
+    posY.value = Number.isFinite(top) ? top.toFixed(2) : '0.00';
+  };
+
+  const syncScale = (value) => {
+    range.value = value;
+    valueInput.value = value;
+  };
+
+  const initial = readOrbScale().toFixed(2);
+  syncScale(initial);
+  updateOrbPosition();
+
+  const restorePanelPosition = () => {
+    try {
+      const raw = localStorage.getItem('orbPanelPos:v1');
+      if (!raw) return;
+      const pos = JSON.parse(raw);
+      if (typeof pos?.left === 'number' && typeof pos?.top === 'number') {
+        panel.style.left = pos.left + 'px';
+        panel.style.top = pos.top + 'px';
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+      }
+    } catch {}
+  };
+
+  restorePanelPosition();
+
+  const enablePanelDrag = () => {
+    if (!dragHandle) return;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+
+    dragHandle.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = panel.getBoundingClientRect();
+      startLeft = rect.left;
+      startTop = rect.top;
+      panel.setPointerCapture?.(e.pointerId);
+    });
+
+    const onMove = (e) => {
+      if (!isDragging) return;
+      const nextLeft = startLeft + (e.clientX - startX);
+      const nextTop = startTop + (e.clientY - startY);
+      panel.style.left = `${nextLeft}px`;
+      panel.style.top = `${nextTop}px`;
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+    };
+
+    const onUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      try {
+        const rect = panel.getBoundingClientRect();
+        localStorage.setItem('orbPanelPos:v1', JSON.stringify({ left: rect.left, top: rect.top }));
+      } catch {}
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  };
+
+  enablePanelDrag();
+
+  range.addEventListener('input', () => {
+    const next = parseFloat(range.value);
+    setOrbScale(next);
+    valueInput.value = range.value;
+  });
+
+  valueInput.addEventListener('input', () => {
+    const next = parseFloat(valueInput.value);
+    if (!Number.isFinite(next)) return;
+    setOrbScale(next);
+    range.value = valueInput.value;
+  });
+
+  panel.querySelectorAll('[data-nudge]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const step = parseFloat(posStep.value) || 4;
+      const rect = ORB.getBoundingClientRect();
+      const dir = button.dataset.nudge;
+      const nextLeft = dir === 'left' ? rect.left - step : dir === 'right' ? rect.left + step : rect.left;
+      const nextTop = dir === 'up' ? rect.top - step : dir === 'down' ? rect.top + step : rect.top;
+      setOrbPosition(nextLeft, nextTop, { save: true });
+      updateOrbPosition();
+    });
+  });
+
+  const syncVisibility = () => {
+    const show = document.body?.classList.contains('dev');
+    panel.hidden = !show;
+  };
+  const observer = new MutationObserver(syncVisibility);
+  if (document.body) observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  syncVisibility();
+
+  panel.__updateOrbPosition = updateOrbPosition;
+  orbDevPanel = panel;
+}
+
 // ---------- boot flow ----------
 async function boot() {
   try {
@@ -521,8 +726,8 @@ async function boot() {
         playlistOrder = [...restored.playlistOrder];
         cursor = Math.min(Math.max(restored.cursor ?? 0, 0), playlistOrder.length - 1);
         index = playlistOrder[cursor] ?? 0;
-        phase = restored.phase === 'gods' ? 'gods' : 'star';
-        isPlaying = !!restored.isPlaying;
+        phase = 'gods';
+        isPlaying = false;
         positionMs = Math.max(0, restored.positionMs ?? 0);
         pendingSeekMs = positionMs;
         syncVisualState();
@@ -532,11 +737,10 @@ async function boot() {
           if (SCWidget) {
             bindWidgetEvents();
             applyPendingSeek();
-            if (isPlaying) requestPlay();
-            else requestPause();
+            requestPause();
           }
         } else {
-          loadTrackByIndex(index, { autoplay: isPlaying, position: positionMs });
+          loadTrackByIndex(index, { autoplay: false, position: positionMs });
         }
         saveState();
         return;
@@ -545,7 +749,7 @@ async function boot() {
 
     const initialIndex = Math.floor(Math.random() * playlist.length);
     buildOrder(initialIndex);
-    phase = 'star';
+    phase = 'gods';
     isPlaying = false;
     positionMs = 0;
     pendingSeekMs = 0;
@@ -560,13 +764,15 @@ function initPlayerOnce() {
   if (!ORB) return;
   if (!ORB.hasAttribute('data-initialized')) {
     ORB.setAttribute('data-initialized', '1');
-    phase = 'star';
+    phase = 'gods';
     updatePlayingState(false);
     syncVisualState();
     restoreOrbPosition();
-    clampOrbToViewport();
+    // Make the orb visible before measuring; clamp on next frame so layout is ready
     ORB.hidden = false;
+    requestAnimationFrame(() => clampOrbToViewport());
     wireUI();
+    setupOrbDevPanel();
     boot();
   }
 }

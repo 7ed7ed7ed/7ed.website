@@ -5,29 +5,20 @@
   <title>Playlist</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="css/site.css" />
-  <style>
-    .pl-grid { 
-      display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); 
-      gap:12px; padding:12px;
-    }
-    .pl-card {
-      border:1px solid #000; padding:10px; background:#fff; color:#000;
-      display:flex; flex-direction:column; gap:8px; min-height:120px;
-    }
-    .pl-card.pl-playing { border-width:2px; border-color:#e00; box-shadow: none; }
-    .pl-title { font-size:14px; line-height:1.3; }
-    .pl-actions { display:flex; gap:6px; }
-    .pl-actions button {
-      border:1px solid #000; background:#fff; padding:6px 8px; cursor:pointer; border-radius:4px;
-    }
-  </style>
+  <!-- Reuse moodboard layout styles for masonry tiles -->
+  <link rel="stylesheet" href="css/moodboard.css" />
 </head>
-<body>
-  <main>
-    <section class="pl-grid" id="plGrid" aria-label="playlist"></section>
-  </main>
+<body class="intro-light">
 
-  <!-- shared music bar + scripts (same block from step 1) -->
+  <div data-modal-root>
+    <main class="mb-wrap">
+      <div id="masonry" class="masonry" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <script type="module" src="js/cassette.js"></script>
+
+  <!-- Top music bar (permanent across pages) -->
   <div id="player-orb" data-turbo-permanent hidden data-phase="star" data-mode="stars">
     <button id="orb-core" class="orb-core" type="button" aria-label="Play playlist"></button>
     <button class="orb-star orb-star--north" type="button" aria-label="Show player controls"></button>
@@ -41,59 +32,22 @@
     <div class="orb-track" aria-live="polite">
       <div class="orb-track__inner" id="orb-track-text">—</div>
     </div>
-    <iframe id="sc-widget" allow="autoplay" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0;" src="about:blank"></iframe>
+
+    <!-- Hidden SoundCloud player iframe controlled via API -->
+    <iframe id="sc-widget"
+            allow="autoplay"
+            style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0;"
+            src="about:blank"></iframe>
   </div>
+
+  <!-- SoundCloud Widget API -->
   <script src="https://w.soundcloud.com/player/api.js"></script>
+
+  <!-- Turbo (for seamless navigation; no install needed) -->
   <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.es2017-umd.js"></script>
+
+  <!-- Your player code -->
   <script type="module" src="js/sc-player.js"></script>
 
-  <script type="module">
-    async function loadGrid() {
-      const grid = document.getElementById('plGrid');
-      const res = await fetch('/data/playlist-soundcloud.json', { cache:'no-cache' });
-      const items = await res.json();
-
-      grid.innerHTML = '';
-      items.forEach((it, i) => {
-        const card = document.createElement('div');
-        card.className = 'pl-card';
-        card.dataset.index = String(i);
-        const t = document.createElement('div');
-        t.className = 'pl-title';
-        t.textContent = it.title || it.url;
-
-        const actions = document.createElement('div');
-        actions.className = 'pl-actions';
-        const playBtn = document.createElement('button');
-        playBtn.textContent = 'Play';
-        playBtn.addEventListener('click', () => (window.opener || window).SC_MBAR?.cue(i));
-
-        const openBtn = document.createElement('button');
-        openBtn.textContent = 'Open';
-        openBtn.addEventListener('click', () => window.open(it.url, '_blank', 'noopener'));
-
-        actions.append(playBtn, openBtn);
-        card.append(t, actions);
-        grid.append(card);
-      });
-
-      function applyHighlight() {
-        try {
-          const st = (window.opener || window).SC_MBAR?.getState?.();
-          if (!st || typeof st.index !== 'number') return;
-          document.querySelectorAll('.pl-card.pl-playing').forEach(el => el.classList.remove('pl-playing'));
-          const target = grid.querySelector(`.pl-card[data-index="${st.index}"]`);
-          if (target) target.classList.add('pl-playing');
-        } catch {}
-      }
-
-      applyHighlight();
-      setInterval(applyHighlight, 1000);
-    }
-    document.addEventListener('turbo:load', loadGrid);
-    // also run for non-Turbo first load
-    if (document.readyState !== 'loading') loadGrid();
-    else document.addEventListener('DOMContentLoaded', loadGrid);
-  </script>
 </body>
 </html>

@@ -1,8 +1,13 @@
 /* Base (pure white background; no outlines) */
+:root { --menu-scale: 1.08; }
+
 html, body {
-  margin: 0; padding: 0;
-  height: 100%; width: 100%;
-  background: #fff; color: #000;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background: #fff;
+  color: #000;
   font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
   overflow-x: hidden;
 }
@@ -11,15 +16,31 @@ html, body {
   position: relative;
   width: 100%;
   height: 100vh;
-  background: #000;
+  background: #fff;
   overflow: hidden;
 }
+.stage-gif {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity .6s ease;
+  background: #fff;
+}
+.stage-gif.is-visible { opacity: 1; }
 
 /* Intro video */
 #introVideo{
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: contain; background: transparent; z-index: 1;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+  z-index: 1;
 }
 /* smooth background fade when we switch colors in JS */
 html, body, .stage, #introVideo {
@@ -29,33 +50,57 @@ html, body, .stage, #introVideo {
 
 /* Menu overlay pinned to the media rect via JS */
 .menu{
-  position: fixed; opacity: 0; pointer-events: none;
-  transition: opacity .6s ease; z-index: 2;
+  position: fixed;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .6s ease;
+  z-index: auto;
 }
-.menu.show { opacity: 1; pointer-events: auto; }
+.menu.show { opacity: 1; }
 
-/* Menu items (text or SVG) positioned by % */
+/* Menu items (text, PNG, or SVG) positioned by % */
 .menu-item{
   position: absolute;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(calc(var(--item-scale, 1) * var(--menu-scale, 1)));
+  z-index: 10001;
   display: inline-block;
   text-decoration: none;
   cursor: pointer;
+  pointer-events: auto;
   line-height: 1;
   color: #000;
   font-weight: 800;
   font-size: clamp(18px, 3.2vw, 64px); /* default for TEXT items */
   user-select: none;
-  transition: transform .15s ease;
+  opacity: 0;
+  transition: opacity .2s ease, transform .15s ease;
 }
-.menu-item:hover{ transform: translate(-50%, -50%) scale(1.03); }
+.menu-item:hover,
+.menu-item:focus-visible { opacity: 1; }
+.menu-item:hover{ transform: translate(-50%, -50%) scale(calc(var(--item-scale, 1) * var(--menu-scale, 1) * 1.03)); }
 
 /* SVG items */
 .menu-item.svg { font-size: 0; color: #000; } /* size comes from svg width */
-.menu-item.svg svg { display: block; width: clamp(40px, 7vw, 160px); height: auto; }
+.menu-item.svg svg {
+  display: block;
+  width: clamp(calc(40px * var(--menu-scale)), calc(7vw * var(--menu-scale)), calc(160px * var(--menu-scale)));
+  height: auto;
+}
+
+/* PNG items */
+.menu-item.img { font-size: 0; }
+.menu-item.img img {
+  display: block;
+  width: clamp(calc(60px * var(--menu-scale)), calc(10vw * var(--menu-scale)), calc(180px * var(--menu-scale)));
+  height: auto;
+}
 
 /* Dev Align Mode (press D) */
-.menu.dev{ outline: 1px dashed rgba(0,0,0,.25); }
+.menu.dev{
+  outline: 1px dashed rgba(0,0,0,.25);
+  pointer-events: auto;
+  background: rgba(255,255,255,.6);
+}
 .menu.dev::before{
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background:
@@ -63,15 +108,120 @@ html, body, .stage, #introVideo {
     linear-gradient(to bottom, rgba(0,0,0,.06) 1px, transparent 1px);
   background-size: 5% 5%;
 }
+.menu.dev .menu-item{ opacity: 1; }
+.menu.dev .menu-item { cursor: grab; }
+.menu.dev .menu-item.dev-selected { cursor: grabbing; }
 .dev-tip{
   position: fixed; z-index: 9999; pointer-events: none;
   padding: 4px 8px; border-radius: 6px; background: rgba(0,0,0,.7);
   color: #fff; font-size: 12px; transform: translate(-50%, -120%); white-space: nowrap;
 }
+#menu-scale-panel{
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  z-index: 12002;
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(0,0,0,.15);
+  box-shadow: 0 6px 18px rgba(0,0,0,.12);
+  font-size: 12px;
+  color: #000;
+}
+#menu-scale-panel[hidden]{ display: none; }
+.menu-scale__header{
+  font-weight: 700;
+  cursor: grab;
+  user-select: none;
+}
+.menu-scale__group{ display: grid; gap: 6px; }
+.menu-scale__divider{ height: 1px; background: rgba(0,0,0,.12); margin: 2px 0; }
+.menu-scale__meta{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.menu-scale__label{ font-weight: 700; }
+.menu-scale__name{ font-size: 11px; opacity: .7; }
+.menu-scale__range{ width: 180px; }
+.menu-scale__value{ width: 80px; }
+.menu-scale__output{ width: 80px; font-family: inherit; }
+.menu-scale__pos-grid{
+  display: grid;
+  place-items: center;
+  gap: 4px;
+}
+.menu-scale__pos-row{ display: flex; gap: 6px; }
+.menu-scale__btn{
+  width: 32px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,.2);
+  background: #fff;
+  cursor: pointer;
+}
+.menu-scale__btn:disabled{ opacity: .5; cursor: not-allowed; }
+.menu-scale__btn--wide{
+  width: 100%;
+  height: 30px;
+  font-size: 11px;
+}
+.menu-scale__pos-values{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+#orb-dev-panel{
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  z-index: 12001;
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(0,0,0,.15);
+  box-shadow: 0 6px 18px rgba(0,0,0,.12);
+  font-size: 12px;
+  color: #000;
+}
+#orb-dev-panel[hidden]{ display: none; }
+.orb-dev__header{
+  font-weight: 700;
+  cursor: grab;
+  user-select: none;
+}
+.orb-dev__group{ display: grid; gap: 6px; }
+.orb-dev__divider{ height: 1px; background: rgba(0,0,0,.12); margin: 2px 0; }
+.orb-dev__label{ font-weight: 700; }
+.orb-dev__range{ width: 180px; }
+.orb-dev__value{ width: 80px; }
+.orb-dev__output{ width: 80px; font-family: inherit; }
+.orb-dev__pos-grid{
+  display: grid;
+  place-items: center;
+  gap: 4px;
+}
+.orb-dev__pos-row{ display: flex; gap: 6px; }
+.orb-dev__btn{
+  width: 32px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,.2);
+  background: #fff;
+  cursor: pointer;
+}
+.orb-dev__btn:disabled{ opacity: .5; cursor: not-allowed; }
+.orb-dev__pos-values{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
 /* === add near the bottom of your CSS === */
 body.intro-dark,
 body.intro-dark .stage,
-body.intro-dark #introVideo { background: #000; }
+body.intro-dark #introVideo { background: #fff; }
 
 body.intro-light,
 body.intro-light .stage,
@@ -81,7 +231,6 @@ body.intro-light .stage {outline: 4px solid #fff}
 
 /* smooth fades */
 html, body, .stage, #introVideo { transition: background-color .6s ease; }
-
 
 @media (prefers-reduced-motion: reduce){
   .menu, .menu-item{ transition: none; }
@@ -95,7 +244,7 @@ body.dev .menu-item.dev-selected {
 /* keep layers tidy */
 .stage { position: relative; }
 #introVideo { z-index: 0; will-change: opacity; background:#000; }
-.menu { z-index: 10; }
+.menu { z-index: auto; }
 
 /* after reveal, make the video non-interactive and invisible (but we don't unload it) */
 #introVideo.is-hidden {
@@ -127,15 +276,21 @@ body.intro-light #introVideo { background: #fff; }
 #introVideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 0; background:#000; }
 
 /* menu overlay we pin to the video rect */
-.menu { position: fixed; opacity: 0; pointer-events: none; z-index: 10; }
-.menu.show { opacity: 1; pointer-events: auto; }
+.menu { position: fixed; opacity: 0; pointer-events: none; z-index: auto; }
+.menu.show { opacity: 1; }
 
 /* menu items */
 .menu-item {
-  position: absolute; transform: translate(-50%, -50%);
+  position: absolute; transform: translate(-50%, -50%) scale(calc(var(--item-scale, 1) * var(--menu-scale, 1)));
+  z-index: 10001;
   display: inline-block; text-decoration: none; cursor: pointer; user-select: none;
+  pointer-events: auto;
   color: #000; font-weight: 800; font-size: clamp(18px, 3.2vw, 64px);
+  opacity: 0;
+  transition: opacity .2s ease, transform .15s ease;
 }
+.menu-item:hover,
+.menu-item:focus-visible { opacity: 1; }
 .menu-item.svg { font-size: 0; }
 .menu-item.svg svg { display: block; width: clamp(40px, 7vw, 160px); height: auto; }
 
@@ -146,22 +301,25 @@ body.intro-light #introVideo { background: #fff; }
 :root {
   --orb-base-size: clamp(100px, 26vw, 240px);
   /* Starting position for the music orb */
-  --orb-left: 63.428070068359375px;
-  --orb-top: 49.799407958984375px;
+  --orb-left: 428.72px;
+  --orb-top: 110.31px;
 }
 
 #player-orb {
+  --orb-user-scale: 1;
+  --orb-phase-scale: 1;
   position: fixed;
   top: var(--orb-top, clamp(12px, 4vw, 32px));
   left: var(--orb-left, clamp(12px, 4vw, 32px));
-  width: var(--orb-size, var(--orb-base-size));
+  width: calc(var(--orb-base-size) * var(--orb-user-scale) * var(--orb-phase-scale));
   aspect-ratio: 2404 / 2520;
-  z-index: 9999;
+  z-index: 9000;
   pointer-events: auto;
   touch-action: none;
 }
-#player-orb[data-phase="star"] { --orb-size: calc(var(--orb-base-size) * 1.5); }
-#player-orb[data-phase="gods"] { --orb-size: calc(var(--orb-base-size) * 2); }
+#player-orb[data-phase="star"] { --orb-phase-scale: 1.5; }
+#player-orb[data-phase="gods"] { --orb-phase-scale: 2; }
+#player-orb[data-phase="gods"] { --orb-left: 27px; --orb-top: 4px; }
 #player-orb[hidden] { display: none !important; }
 
 #player-orb button {
@@ -264,7 +422,7 @@ body.intro-light #introVideo { background: #fff; }
 
 #player-orb .orb-track {
   position: absolute;
-  bottom: -2%;
+  bottom: 10%;
   left: 50%;
   transform: translateX(-50%);
   width: 110%;
@@ -311,15 +469,15 @@ body.intro-light #introVideo { background: #fff; }
 .dw-dot{ appearance:none; border:1px solid rgba(0,0,0,.25); width:12px; height:12px; border-radius:50%; padding:0; cursor:pointer; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
 .dw-dot:focus-visible{ outline:2px solid #000; outline-offset:1px; }
 /* macOS-like glossy gradients */
-.dw-close{ 
+.dw-close{
   background: radial-gradient(circle at 30% 30%, #ffb3aa 0%, #ff8c83 30%, #ff605c 70%);
   border-color: #e0443e;
 }
-.dw-min{ 
+.dw-min{
   background: radial-gradient(circle at 30% 30%, #ffe8a3 0%, #ffd469 30%, #febc2e 70%);
   border-color: #d9a21f;
 }
-.dw-max{ 
+.dw-max{
   background: radial-gradient(circle at 30% 30%, #baf3c2 0%, #6fe38b 30%, #28c940 70%);
   border-color: #1ea92f;
 }

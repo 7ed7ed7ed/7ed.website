@@ -30,6 +30,7 @@ export async function loadMenu({ container, dataUrl }) {
       if (item.color) a.style.color = item.color;
       if (item.size && !item.svg) a.style.fontSize = item.size; // text sizing
       if (item.fontWeight) a.style.fontWeight = item.fontWeight;
+      if (item.scale) a.style.setProperty('--item-scale', item.scale);
       if (item.target === '_blank') a.target = '_blank';
       if (item.rel) a.rel = item.rel;
       if (item.title) a.title = item.title;
@@ -46,6 +47,14 @@ export async function loadMenu({ container, dataUrl }) {
         if (item.iconSize) svgEl.style.width = item.iconSize;
         else if (item.size) svgEl.style.width = item.size;
         a.appendChild(svgEl);
+      } else if (item.img) {
+        a.classList.add('img');
+        const img = document.createElement('img');
+        img.src = item.img;
+        img.alt = item.ariaLabel || item.label || '';
+        if (item.iconSize) img.style.width = item.iconSize;
+        else if (item.size) img.style.width = item.size;
+        a.appendChild(img);
       } else if (item.label != null) {
         a.textContent = item.label;
       } else {
