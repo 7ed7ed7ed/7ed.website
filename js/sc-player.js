@@ -3,9 +3,53 @@
 const JSON_URL = 'data/playlist-soundcloud.json';
 const IS_POPUP = (() => { try { return new URLSearchParams(location.search).get('popup') === '1'; } catch { return false; }})();
 
-// In popup windows, do not initialize the global player UI or SoundCloud widget.
+// In popup windows, do not initialize another widget instance.
+// Instead, proxy controls/state to the opener so title + controls stay in sync.
 if (IS_POPUP) {
-  window.SC_MBAR = { cue() {}, play() {}, pause() {}, next() {}, prev() {}, exit() {} };
+  const host = (() => {
+    try {
+      if (window.opener && !window.opener.closed && window.opener.SC_MBAR) return window.opener;
+    } catch {}
+    return null;
+  })();
+
+  const fallback = { cue() {}, play() {}, pause() {}, next() {}, prev() {}, exit() {}, getState() { return null; } };
+  const api = host?.SC_MBAR || fallback;
+  window.SC_MBAR = {
+    cue(i) { try { api.cue(i); } catch {} },
+    play() { try { api.play(); } catch {} },
+    pause() { try { api.pause(); } catch {} },
+    next() { try { api.next(); } catch {} },
+    prev() { try { api.prev(); } catch {} },
+    exit() { try { api.exit(); } catch {} },
+    getState() { try { return api.getState?.() || null; } catch { return null; } }
+  };
+
+  const popupOrb = document.getElementById('player-orb');
+  const popupTrackText = document.getElementById('orb-track-text');
+  const popupCore = document.getElementById('orb-core');
+  const popupPrev = document.getElementById('orb-prev');
+  const popupNext = document.getElementById('orb-next');
+  const popupExit = document.getElementById('orb-exit');
+  if (popupOrb && popupTrackText) {
+    popupOrb.hidden = false;
+    popupCore?.addEventListener('click', () => {
+      const st = window.SC_MBAR.getState?.();
+      if (st?.isPlaying) window.SC_MBAR.pause();
+      else window.SC_MBAR.play();
+    });
+    popupPrev?.addEventListener('click', () => window.SC_MBAR.prev());
+    popupNext?.addEventListener('click', () => window.SC_MBAR.next());
+    popupExit?.addEventListener('click', () => window.SC_MBAR.exit());
+    setInterval(() => {
+      const st = window.SC_MBAR.getState?.();
+      const title = (st?.title && String(st.title).trim()) || '—';
+      popupTrackText.textContent = title.toLowerCase();
+      popupOrb.setAttribute('data-playing', st?.isPlaying ? '1' : '0');
+      popupOrb.setAttribute('data-phase', 'gods');
+      popupOrb.setAttribute('data-mode', st?.isPlaying ? 'playgods' : 'gods');
+    }, 500);
+  }
 }
 
 const ORB           = document.getElementById('player-orb');

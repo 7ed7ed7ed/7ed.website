@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Image Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #000;
+      color: #fff;
+      font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+    }
+    .viewer {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      justify-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .viewer img {
+      max-width: 96vw;
+      max-height: calc(100vh - 84px);
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+    }
+    .caption {
+      width: min(96vw, 1600px);
+      font-size: 12px;
+      line-height: 1.4;
+      opacity: 0.9;
+      text-align: left;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <main class="viewer" aria-live="polite">
+    <img id="viewerImage" alt="" />
+    <figcaption id="viewerCaption" class="caption"></figcaption>
+  </main>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var src = params.get('src') || '';
+      var caption = params.get('caption') || '';
+      var img = document.getElementById('viewerImage');
+      var cap = document.getElementById('viewerCaption');
+
+      if (!src) {
+        cap.textContent = 'No image source provided.';
+        return;
+      }
+
+      img.src = src;
+      img.alt = caption || 'Large image view';
+      cap.textContent = caption;
+
+      window.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') window.close();
+      });
+    })();
+  </script>
+</body>
+</html>

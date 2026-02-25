@@ -10,8 +10,9 @@ import sizeOf from "image-size";
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 // CONFIG — adjust if your folders differ
-const IMG_DIR   = join(__dirname, "..", "images", "moodboard");
+const IMG_DIR   = join(__dirname, "..", "images", "75-moodboard(v1)");
 const OUT_FILE  = join(__dirname, "..", "data", "moodboard.json");
+const SRC_DIR   = basename(IMG_DIR);
 
 // Optional helpers
 const FEATURED  = join(IMG_DIR, "featured.txt");        // one filename per line
@@ -84,7 +85,7 @@ const items = files.map(name => {
   } catch {}
   const meta = captions[name] || {};
   return {
-    src: `images/moodboard/${name}`,
+    src: `images/${SRC_DIR}/${name}`,
     width, height,
     dateAdded,
     caption: meta.caption || "",

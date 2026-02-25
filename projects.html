@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Projects</title>
+  <title>projects.</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="css/site.css" />
   <style>
@@ -10,6 +10,39 @@
     html, body { height: 100%; }
     body { margin: 0; background: #111; color: #eee; }
     .pdf-wrap { position: relative; height: 100vh; }
+    .pdf-toolbar {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      background: rgba(20, 20, 20, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      backdrop-filter: blur(4px);
+    }
+    .pdf-btn {
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.08);
+      color: #eee;
+      height: 28px;
+      min-width: 28px;
+      border-radius: 4px;
+      cursor: pointer;
+      font: inherit;
+    }
+    .pdf-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+    .pdf-label {
+      font: 600 12px/1.2 Helvetica, Arial, sans-serif;
+      letter-spacing: .2px;
+      white-space: nowrap;
+    }
     .pdf-frame { width: 100%; height: 100%; border: 0; background: #222; }
     .pdf-fallback { padding: 16px; line-height: 1.4; }
     .pdf-fallback a { color: #8ad; }
@@ -18,8 +51,15 @@
 <body class="intro-light">
 
   <main class="pdf-wrap">
+    <div id="pdfToolbar" class="pdf-toolbar" hidden>
+      <button id="pdfPrev" class="pdf-btn" type="button" aria-label="Previous PDF">&lt;</button>
+      <span id="pdfLabel" class="pdf-label"></span>
+      <button id="pdfNext" class="pdf-btn" type="button" aria-label="Next PDF">&gt;</button>
+    </div>
+
     <!-- Inline PDF (scrollable via built-in PDF viewer) -->
     <iframe id="pdfFrame" class="pdf-frame" title="Projects PDF" src="about:blank"></iframe>
+    <div id="pdfFallback" class="pdf-fallback" hidden></div>
 
     <noscript>
       <div class="pdf-fallback">
@@ -30,42 +70,64 @@
 
   <script>
     (function() {
-      // Allow specifying PDF via query string: projects.html?src=path/to/file.pdf
+      var frame = document.getElementById('pdfFrame');
+      var fallback = document.getElementById('pdfFallback');
+      var toolbar = document.getElementById('pdfToolbar');
+      var prevBtn = document.getElementById('pdfPrev');
+      var nextBtn = document.getElementById('pdfNext');
+      var label = document.getElementById('pdfLabel');
       var params = new URLSearchParams(window.location.search);
       var src = params.get('src');
-      // Provide a sensible default if none supplied (update this to your PDF)
-      if (!src) {
-        // Default to your uploaded PDF
-        src = 'images/gallery/pdf-pages.pdf';
+
+      // Add/remove entries in this set as needed.
+      var pdfSet = [
+        'images/projects_pdfs/2401 828 Chillum Rd.pdf',
+        'images/projects_pdfs/240729 - Baldwin House Concept - SD 1.pdf',
+        'images/projects_pdfs/2414 11212 Montgomery Rd - Marco Lopez.pdf',
+        'images/projects_pdfs/pdf-pages.pdf'
+      ];
+
+      function fileLabel(path) {
+        try {
+          var file = path.split('/').pop() || path;
+          return decodeURIComponent(file);
+        } catch (_) {
+          return path;
+        }
       }
-      // Hint some viewers to fit width; behavior varies by browser
-      var hint = '#view=FitH';
-      document.getElementById('pdfFrame').src = src + hint;
+
+      function loadAt(index) {
+        if (!pdfSet.length) return;
+        var safeIndex = ((index % pdfSet.length) + pdfSet.length) % pdfSet.length;
+        var current = pdfSet[safeIndex];
+        label.textContent = (safeIndex + 1) + ' / ' + pdfSet.length + '  ' + fileLabel(current);
+        prevBtn.disabled = pdfSet.length < 2;
+        nextBtn.disabled = pdfSet.length < 2;
+        frame.src = encodeURI(current) + '#view=FitH';
+        frame.dataset.index = String(safeIndex);
+      }
+
+      if (src) {
+        frame.src = encodeURI(src) + '#view=FitH';
+      } else {
+        toolbar.hidden = false;
+        var start = Number(params.get('i') || 0);
+        if (!Number.isFinite(start)) start = 0;
+        loadAt(start);
+        prevBtn.addEventListener('click', function() {
+          loadAt(Number(frame.dataset.index || 0) - 1);
+        });
+        nextBtn.addEventListener('click', function() {
+          loadAt(Number(frame.dataset.index || 0) + 1);
+        });
+      }
+
+      frame.addEventListener('error', function() {
+        frame.hidden = true;
+        fallback.hidden = false;
+        fallback.innerHTML = 'Could not load PDF.<br/>Try <code>projects.html?src=images/projects_pdfs/pdf-pages.pdf</code>.';
+      });
     })();
   </script>
-
-  <!-- Top music bar (permanent across pages) -->
-  <div id="player-orb" data-turbo-permanent hidden data-phase="star" data-mode="stars">
-    <button id="orb-core" class="orb-core" type="button" aria-label="Play playlist"></button>
-    <button class="orb-star orb-star--north" type="button" aria-label="Show player controls"></button>
-    <button class="orb-star orb-star--south" type="button" aria-label="Show player controls"></button>
-    <button class="orb-star orb-star--east" type="button" aria-label="Show player controls"></button>
-    <button class="orb-star orb-star--west" type="button" aria-label="Show player controls"></button>
-    <button class="orb-star orb-star--orbit" type="button" aria-label="Show player controls"></button>
-    <button id="orb-prev" class="orb-hotspot orb-left" type="button" aria-label="Previous track"></button>
-    <button id="orb-next" class="orb-hotspot orb-right" type="button" aria-label="Next track"></button>
-    <button id="orb-exit" class="orb-exit" type="button" aria-label="Exit player view"></button>
-    <div class="orb-track" aria-live="polite">
-      <div class="orb-track__inner" id="orb-track-text">—</div>
-    </div>
-    <iframe id="sc-widget" allow="autoplay"
-            style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0;"
-            src="about:blank"></iframe>
-  </div>
-
-  <!-- SoundCloud Widget API + Turbo + Player controller -->
-  <script src="https://w.soundcloud.com/player/api.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.es2017-umd.js"></script>
-  <script type="module" src="js/sc-player.js"></script>
 </body>
 </html>

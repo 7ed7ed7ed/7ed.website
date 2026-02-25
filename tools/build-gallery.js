@@ -1,5 +1,5 @@
 // tools/build-gallery.js
-// Build a data/gallery.json listing from images/gallery/*
+// Build a data/gallery.json listing from images/gallery_02.18.26/*
 // Mirrors tools/build-moodboard.js but targets the gallery folder
 
 import { readdirSync, statSync, readFileSync, writeFileSync, existsSync } from 'fs';
@@ -9,7 +9,7 @@ import sizeOf from 'image-size';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
-const IMG_DIR  = join(__dirname, '..', 'images', 'gallery');
+const IMG_DIR  = join(__dirname, '..', 'images', 'gallery_02.18.26');
 const OUT_FILE = join(__dirname, '..', 'data', 'gallery.json');
 
 const FEATURED = join(IMG_DIR, 'featured.txt');
@@ -63,7 +63,7 @@ const items = files.map(name => {
   try { const dim = sizeOf(abs); width = dim?.width; height = dim?.height; } catch {}
   const meta = captions[name] || {};
   return {
-    src: `images/gallery/${name}`,
+    src: `images/gallery_02.18.26/${name}`,
     width, height,
     dateAdded,
     caption: meta.caption || '',

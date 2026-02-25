@@ -1,17 +1,28 @@
 html, body {
+  height: 100%;
   margin: 0;
   padding: 0;
   background: #fff;   /* white like moodboard */
   color: #000;
 }
 
-/* layout for icons */
-.bio-wrap {
-  min-height: calc(100vh - 60px); /* subtract header height */
+[data-modal-root] {
+  min-height: 100vh;
   display: grid;
   place-items: center;
+}
+
+/* layout for icons */
+.bio-wrap {
+  min-height: 100%;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  justify-content: center;
   gap: 40px;
   padding: 40px 20px;
+  box-sizing: border-box;
 }
 
 @media (min-width: 720px) {

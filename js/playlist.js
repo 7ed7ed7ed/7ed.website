@@ -1,4 +1,4 @@
-const GRID = document.getElementById("plGrid");
+howconst GRID = document.getElementById("plGrid");
 const DATA = "/data/playlist.json";
 
 init();

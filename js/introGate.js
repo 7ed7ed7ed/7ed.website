@@ -9,6 +9,12 @@ const menu  = document.getElementById('menu');
 /* ===== pin menu to media rect (fallback to stage if video hidden) ===== */
 const MENU_DESIGN_WIDTH = 2560;
 const MENU_DESIGN_HEIGHT = 1600;
+const GALLERY_WINDOW_DEFAULT = {
+  width: 569,
+  height: 529,
+  left: 22,
+  top: 293
+};
 
 function rectOfTarget() {
   if (video) {
@@ -57,8 +63,7 @@ requestAnimationFrame(syncMenuToCanvasBox);
 const MODAL_PAGE_MAP = {
   '/bio.html': {
     css: ['css/bio.css'],
-    // Wider bio window for comfortable layout
-    window: { width: 146, height: 449, left: 33, top: 409, resizable: true }
+    window: { width: 146, height: 549, left: 33, top: 286, resizable: true }
   },
   '/info.html': {
     css: ['css/info.css'],
@@ -78,9 +83,10 @@ const MODAL_PAGE_MAP = {
     }
   },
   '/gallery.html': {
-    css: ['css/moodboard.css'],
+    css: ['css/gallery.css'],
     scripts: ['js/gallery.js'],
-    window: { width: 183, height: 809, left: 213, top: 25, resizable: true },
+    // Adjust this in one place via GALLERY_WINDOW_DEFAULT above.
+    window: { ...GALLERY_WINDOW_DEFAULT, resizable: true },
     init(root) {
       if (typeof window.initGallery === 'function') window.initGallery(root);
     }
@@ -95,7 +101,7 @@ const MODAL_PAGE_MAP = {
   '/cassette.html': {
     css: ['css/moodboard.css'],
     scripts: ['js/cassette.js'],
-    window: { width: 280, height: 253, left: 1160, top: 25, resizable: true },
+    window: { width: 280, height: 253, left: 400.9, top: 96.24, resizable: true },
     init(root) {
       if (typeof window.initCassette === 'function') window.initCassette(root);
     }

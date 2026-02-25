@@ -1,4 +1,9 @@
 /* ========== Moodboard (masonry via CSS columns) ========== */
+html,
+body,
+body.intro-light {
+  background: #000 !important;
+}
 
 .mb-wrap { 
   max-width: 1300px;

@@ -155,6 +155,31 @@ function createLightboxController(base = document) {
   };
 }
 
+function createLargeImageOpener(fallbackOpen) {
+  return (src, caption) => {
+    if (!src) return;
+    try {
+      const viewerUrl = new URL('image-viewer.html', window.location.href);
+      viewerUrl.searchParams.set('src', src);
+      if (caption) viewerUrl.searchParams.set('caption', caption);
+
+      const sw = window.screen?.availWidth || window.innerWidth || 1400;
+      const sh = window.screen?.availHeight || window.innerHeight || 900;
+      const width = Math.max(960, Math.floor(sw * 0.9));
+      const height = Math.max(640, Math.floor(sh * 0.9));
+      const left = Math.max(0, Math.floor((sw - width) / 2));
+      const top = Math.max(0, Math.floor((sh - height) / 2));
+      const features = `resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no,width=${width},height=${height},left=${left},top=${top}`;
+      const win = window.open(viewerUrl.toString(), '_blank', features);
+      if (win) {
+        try { win.focus(); } catch {}
+        return;
+      }
+    } catch {}
+    fallbackOpen?.(src, caption);
+  };
+}
+
 async function loadMoodboard(base = document) {
   const container = base.querySelector(CONTAINER_SELECTOR);
   if (!container) {
@@ -196,9 +221,10 @@ async function loadMoodboard(base = document) {
   );
 
   const openLightbox = createLightboxController(base);
+  const openLargeImage = createLargeImageOpener(openLightbox);
   const frag = document.createDocumentFragment();
   items.forEach((it) => {
-    frag.appendChild(createTile(it, { onOpenLightbox: openLightbox }));
+    frag.appendChild(createTile(it, { onOpenLightbox: openLargeImage }));
   });
   container.innerHTML = '';
   container.appendChild(frag);
