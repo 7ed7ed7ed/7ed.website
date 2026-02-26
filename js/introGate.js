@@ -220,6 +220,16 @@ const INTRO_KEY = 'introSeen';
 let store = null;
 try { store = window.sessionStorage; } catch { store = null; }
 const alreadySeen = store?.getItem(INTRO_KEY) === '1';
+const loopMedia = (loopGif instanceof HTMLMediaElement) ? loopGif : null;
+
+function showLoopMedia() {
+  if (!loopGif) return;
+  loopGif.classList.add('is-visible');
+  if (loopMedia) {
+    loopMedia.currentTime = 0;
+    loopMedia.play().catch(() => {});
+  }
+}
 
 // Build the menu (hidden at first)
 await loadMenu({ container: menu, dataUrl: './data/menuItems.json?v=' + Date.now() });
@@ -232,7 +242,7 @@ if (alreadySeen) {
   body.classList.add('intro-light');
   menu.classList.add('show');
   if (video) video.classList.add('is-hidden'); // make sure video never blocks clicks
-  if (loopGif) loopGif.classList.add('is-visible');
+  showLoopMedia();
   syncMenuToCanvasBox();
 
   markIntroSeen();
@@ -256,6 +266,10 @@ if (alreadySeen) {
           hasStarted = true;
         } catch (err) {
           console.warn('[intro] play failed:', err?.name || err);
+          // If intro media cannot play (missing/blocked URL), avoid trapping on black screen.
+          hasStarted = true;
+          revealTriggeredByClick = true;
+          endIntroFlow();
         }
         return; // don’t skip on first click
       }
@@ -267,6 +281,7 @@ if (alreadySeen) {
 
     // auto reveal at natural end
     video.addEventListener('ended', endIntroFlow);
+    video.addEventListener('error', endIntroFlow);
   }
 }
 
@@ -293,7 +308,7 @@ function endIntroFlow() {
     video.classList.add('is-hidden');
     video.style.pointerEvents = 'none';
   }
-  if (loopGif) loopGif.classList.add('is-visible');
+  showLoopMedia();
 
   syncMenuToCanvasBox();
   markIntroSeen();

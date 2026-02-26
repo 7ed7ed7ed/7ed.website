@@ -138,19 +138,19 @@
       // Add/remove entries in this set as needed.
       var pdfSet = [
         {
-          src: 'images/projects_pdfs/portfolio.pdf',
+          src: 'https://pub-d743d8d1f4af41bcaecd76b83ac5c384.r2.dev/images/projects_pdfs/portfolio.pdf',
           thumb: 'images/projects_pdfs/thumbnails/portfolio_thumbnail.jpg'
         },
         {
-          src: 'images/projects_pdfs/BTD_2414-11212 Montgomery Rd.pdf',
+          src: 'https://pub-d743d8d1f4af41bcaecd76b83ac5c384.r2.dev/images/projects_pdfs/BTD_2414-11212 Montgomery Rd.pdf',
           thumb: 'images/projects_pdfs/thumbnails/montgomery_thumbnail.jpg'
         },
         {
-          src: 'images/projects_pdfs/BTD_240729-Baldwin House Concept - SD.pdf',
+          src: 'https://pub-d743d8d1f4af41bcaecd76b83ac5c384.r2.dev/images/projects_pdfs/BTD_240729-Baldwin House Concept - SD.pdf',
           thumb: 'images/projects_pdfs/thumbnails/baldwin_thumbnail.jpg'
         },
         {
-          src: 'images/projects_pdfs/BTD_2401-828 Chillum Rd.pdf',
+          src: 'https://pub-d743d8d1f4af41bcaecd76b83ac5c384.r2.dev/images/projects_pdfs/BTD_2401-828 Chillum Rd.pdf',
           thumb: 'images/projects_pdfs/thumbnails/chillum_thumbnail.jpg'
         }
       ];
@@ -216,7 +216,7 @@
       frame.addEventListener('error', function() {
         frame.hidden = true;
         fallback.hidden = false;
-        fallback.innerHTML = 'Could not load PDF.<br/>Select a thumbnail above or try <code>projects.html?src=images/projects_pdfs/pdf-pages.pdf</code>.';
+        fallback.innerHTML = 'Could not load PDF.<br/>Select a thumbnail above or try <code>https://pub-d743d8d1f4af41bcaecd76b83ac5c384.r2.dev/images/projects_pdfs/portfolio.pdf</code>.';
       });
     })();
   </script>
