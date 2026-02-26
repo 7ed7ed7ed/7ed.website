@@ -15,6 +15,22 @@ const GALLERY_WINDOW_DEFAULT = {
   left: 22,
   top: 293
 };
+const BOMB_DESTINATIONS = [
+  'https://pudding.cool/2022/06/aztec-gods/',
+  'https://musicmap.info/',
+  'https://www.vitsoe.com/us/about/good-design',
+  'https://www.pantonworld.com/blog/',
+  'https://handbook.org/',
+  'https://sabukaru.online/articles/the-promised-tokyo',
+  'https://www.archivepdf.net/scans/kapital/aloha-brigade-lookbook',
+  'https://www.archivepdf.net/scans/undercover/tgraphics',
+  'images/IMG_8475.GIF'
+];
+const TAPES_TARGET_URL = 'https://www.youtube.com/watch?v=4VQkk3sDLac&list=PLOcYmNbyUWBxhrvPLCrPCyuP-jjjAYmk2';
+const BOMB_LAST_INDEX_KEY = 'bombLastIndex:v1';
+const BOMB_USED_SET_KEY = 'bombUsedSet:v1';
+const BOMB_OPEN_COOLDOWN_MS = 700;
+const BOMB_OPEN_LOCK_KEY = '__bombOpenLockUntil__';
 
 function rectOfTarget() {
   if (video) {
@@ -52,6 +68,81 @@ function syncMenuToCanvasBox() {
     transformOrigin: 'top left',
     pointerEvents: interactive ? 'auto' : 'none'
   });
+}
+
+function openRandomBombDestination() {
+  const now = Date.now();
+  const lockUntil = Number(window[BOMB_OPEN_LOCK_KEY] || 0);
+  if (now < lockUntil) return;
+  window[BOMB_OPEN_LOCK_KEY] = now + BOMB_OPEN_COOLDOWN_MS;
+
+  if (!BOMB_DESTINATIONS.length) return;
+
+  let lastIndex = -1;
+  try {
+    const raw = localStorage.getItem(BOMB_LAST_INDEX_KEY);
+    const parsed = Number(raw);
+    if (Number.isInteger(parsed) && parsed >= 0 && parsed < BOMB_DESTINATIONS.length) {
+      lastIndex = parsed;
+    }
+  } catch {}
+
+  let used = [];
+  try {
+    const rawUsed = localStorage.getItem(BOMB_USED_SET_KEY);
+    const parsedUsed = JSON.parse(rawUsed || '[]');
+    if (Array.isArray(parsedUsed)) {
+      used = parsedUsed
+        .map((n) => Number(n))
+        .filter((n) => Number.isInteger(n) && n >= 0 && n < BOMB_DESTINATIONS.length);
+    }
+  } catch {}
+
+  const usedSet = new Set(used);
+  if (usedSet.size >= BOMB_DESTINATIONS.length) {
+    usedSet.clear();
+  }
+
+  let candidates = [];
+  for (let i = 0; i < BOMB_DESTINATIONS.length; i += 1) {
+    if (!usedSet.has(i)) candidates.push(i);
+  }
+
+  if (candidates.length > 1 && lastIndex >= 0) {
+    const withoutLast = candidates.filter((i) => i !== lastIndex);
+    if (withoutLast.length) candidates = withoutLast;
+  }
+
+  const nextIndex = candidates[Math.floor(Math.random() * candidates.length)];
+
+  try { localStorage.setItem(BOMB_LAST_INDEX_KEY, String(nextIndex)); } catch {}
+  try {
+    usedSet.add(nextIndex);
+    localStorage.setItem(BOMB_USED_SET_KEY, JSON.stringify(Array.from(usedSet)));
+  } catch {}
+
+  const rawTarget = BOMB_DESTINATIONS[nextIndex];
+  if (!rawTarget) return;
+  const target = new URL(rawTarget, window.location.href).href;
+  const isGif = /\.gif($|[?#])/i.test(rawTarget);
+
+  try {
+    if (isGif) {
+      window.open(target, '_blank', 'popup=yes,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no,width=900,height=700,left=120,top=80');
+    } else {
+      window.open(target, '_blank', 'noopener,noreferrer');
+    }
+  } catch {
+    try {
+      const a = document.createElement('a');
+      a.href = target;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {}
+  }
 }
 
 ['loadedmetadata','loadeddata','load'].forEach(ev => window.addEventListener(ev, syncMenuToCanvasBox));
@@ -92,24 +183,24 @@ const MODAL_PAGE_MAP = {
     }
   },
   '/playlist.html': {
-    window: { width: 217, height: 569, left: 977, top: 265, resizable: false }
-  }
-  ,
-  '/bomb.html': {
-    window: { width: 296, height: 233, left: 924, top: 542, resizable: true }
-  },
-  '/cassette.html': {
     css: ['css/moodboard.css'],
     scripts: ['js/cassette.js'],
-    window: { width: 280, height: 253, left: 400.9, top: 96.24, resizable: true },
+    window: { width: 237, height: 682, left: 1007, top: 151, resizable: true },
     init(root) {
       if (typeof window.initCassette === 'function') window.initCassette(root);
     }
   }
   ,
+  '/bomb.html': {
+    window: { width: 296, height: 233, left: 924, top: 542, resizable: true }
+  },
+  '/tapes.html': {
+    window: { width: 237, height: 682, left: 1007, top: 151, resizable: false }
+  }
+  ,
   '/projects.html': {
     // Large window for PDF viewing
-    window: { width: 566, height: 494, left: 167, top: 25, resizable: true }
+    window: { width: 1438, height: 806, left: 0, top: 25, resizable: true }
   }
 };
 
@@ -959,7 +1050,7 @@ function setupDesktopWindows() {
     'info.html',
     'bio.html',
     'playlist.html',
-    'cassette.html',
+    'tapes.html',
     'projects.html'
   ];
 
@@ -995,6 +1086,22 @@ function setupDesktopWindows() {
       return;
     }
     const path = normalizePath(link.getAttribute('href') || '');
+    if (path === '/bomb.html') {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      openRandomBombDestination();
+      return;
+    }
+    if (path === '/tapes.html') {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      try {
+        window.open(TAPES_TARGET_URL, '_blank', 'noopener,noreferrer');
+      } catch {}
+      return;
+    }
     const config = MODAL_PAGE_MAP[path] || {};
     const title = link.textContent || link.getAttribute('aria-label') || '';
     event.preventDefault();

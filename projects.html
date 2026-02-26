@@ -6,60 +6,121 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="css/site.css" />
   <style>
-    /* Simple full-viewport PDF viewer */
     html, body { height: 100%; }
     body { margin: 0; background: #111; color: #eee; }
-    .pdf-wrap { position: relative; height: 100vh; }
-    .pdf-toolbar {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 2;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 8px;
-      background: rgba(20, 20, 20, 0.72);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 6px;
-      backdrop-filter: blur(4px);
+    .pdf-wrap {
+      height: 100vh;
+      padding: 10px;
+      box-sizing: border-box;
     }
-    .pdf-btn {
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.08);
+    .pdf-layout {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      gap: 10px;
+      min-height: 0;
+    }
+    .pdf-picker {
+      height: 100%;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      align-content: start;
+      gap: 10px;
+      padding-right: 2px;
+    }
+    .pdf-card {
+      border: 0;
+      background: transparent;
       color: #eee;
-      height: 28px;
-      min-width: 28px;
-      border-radius: 4px;
+      padding: 0;
       cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
       font: inherit;
     }
-    .pdf-btn:disabled {
-      opacity: 0.45;
-      cursor: default;
+    .pdf-card.is-active .pdf-thumb {
+      border-color: #ff0000;
+      box-shadow: inset 0 0 0 1px rgba(255, 0, 0, 0.5);
     }
-    .pdf-label {
-      font: 600 12px/1.2 Helvetica, Arial, sans-serif;
-      letter-spacing: .2px;
-      white-space: nowrap;
+    .pdf-thumb {
+      --thumb-ratio: 4 / 3;
+      width: 100%;
+      aspect-ratio: var(--thumb-ratio);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: #161616;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+      min-height: 120px;
+    }
+    .pdf-thumb.no-thumb::before {
+      content: "PDF";
+      font: 700 32px/1 Helvetica, Arial, sans-serif;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.22);
+    }
+    .pdf-thumb img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      object-position: center;
+    }
+    .pdf-card-label {
+      display: block;
+      width: 100%;
+      margin: 6px 0 0 0;
+      text-align: left;
+      font: 600 12px/1.25 Helvetica, Arial, sans-serif;
+      color: #000;
+      opacity: 1;
+      white-space: normal;
+      word-break: break-word;
+    }
+    .pdf-panel {
+      height: 100%;
+      min-height: 0;
+    }
+    .pdf-viewer {
+      height: 100%;
+      min-height: 0;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      overflow: hidden;
+      background: #222;
+      position: relative;
     }
     .pdf-frame { width: 100%; height: 100%; border: 0; background: #222; }
     .pdf-fallback { padding: 16px; line-height: 1.4; }
     .pdf-fallback a { color: #8ad; }
+    @media (max-width: 900px) {
+      .pdf-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: 220px minmax(0, 1fr);
+      }
+      .pdf-picker {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow-y: auto;
+      }
+    }
   </style>
 </head>
 <body class="intro-light">
 
   <main class="pdf-wrap">
-    <div id="pdfToolbar" class="pdf-toolbar" hidden>
-      <button id="pdfPrev" class="pdf-btn" type="button" aria-label="Previous PDF">&lt;</button>
-      <span id="pdfLabel" class="pdf-label"></span>
-      <button id="pdfNext" class="pdf-btn" type="button" aria-label="Next PDF">&gt;</button>
-    </div>
+    <div class="pdf-layout">
+      <aside id="pdfPicker" class="pdf-picker" aria-label="Project PDF thumbnails"></aside>
 
-    <!-- Inline PDF (scrollable via built-in PDF viewer) -->
-    <iframe id="pdfFrame" class="pdf-frame" title="Projects PDF" src="about:blank"></iframe>
-    <div id="pdfFallback" class="pdf-fallback" hidden></div>
+      <section class="pdf-panel">
+        <div id="pdfViewer" class="pdf-viewer">
+          <iframe id="pdfFrame" class="pdf-frame" title="Projects PDF" src="about:blank"></iframe>
+          <div id="pdfFallback" class="pdf-fallback" hidden></div>
+        </div>
+      </section>
+    </div>
 
     <noscript>
       <div class="pdf-fallback">
@@ -72,19 +133,26 @@
     (function() {
       var frame = document.getElementById('pdfFrame');
       var fallback = document.getElementById('pdfFallback');
-      var toolbar = document.getElementById('pdfToolbar');
-      var prevBtn = document.getElementById('pdfPrev');
-      var nextBtn = document.getElementById('pdfNext');
-      var label = document.getElementById('pdfLabel');
-      var params = new URLSearchParams(window.location.search);
-      var src = params.get('src');
+      var picker = document.getElementById('pdfPicker');
 
       // Add/remove entries in this set as needed.
       var pdfSet = [
-        'images/projects_pdfs/2401 828 Chillum Rd.pdf',
-        'images/projects_pdfs/240729 - Baldwin House Concept - SD 1.pdf',
-        'images/projects_pdfs/2414 11212 Montgomery Rd - Marco Lopez.pdf',
-        'images/projects_pdfs/pdf-pages.pdf'
+        {
+          src: 'images/projects_pdfs/portfolio.pdf',
+          thumb: 'images/projects_pdfs/thumbnails/portfolio_thumbnail.jpg'
+        },
+        {
+          src: 'images/projects_pdfs/BTD_2414-11212 Montgomery Rd.pdf',
+          thumb: 'images/projects_pdfs/thumbnails/montgomery_thumbnail.jpg'
+        },
+        {
+          src: 'images/projects_pdfs/BTD_240729-Baldwin House Concept - SD.pdf',
+          thumb: 'images/projects_pdfs/thumbnails/baldwin_thumbnail.jpg'
+        },
+        {
+          src: 'images/projects_pdfs/BTD_2401-828 Chillum Rd.pdf',
+          thumb: 'images/projects_pdfs/thumbnails/chillum_thumbnail.jpg'
+        }
       ];
 
       function fileLabel(path) {
@@ -96,36 +164,59 @@
         }
       }
 
+      function renderPicker(activeIndex) {
+        picker.innerHTML = '';
+        pdfSet.forEach(function(item, index) {
+          var path = item.src;
+          var card = document.createElement('button');
+          card.type = 'button';
+          card.className = 'pdf-card' + (index === activeIndex ? ' is-active' : '');
+          card.setAttribute('aria-label', 'Open ' + fileLabel(path));
+
+          var thumb = document.createElement('div');
+          thumb.className = 'pdf-thumb no-thumb';
+          if (item.thumb) {
+            var image = document.createElement('img');
+            image.src = encodeURI(item.thumb);
+            image.alt = fileLabel(path) + ' thumbnail';
+            image.addEventListener('load', function() {
+              thumb.classList.remove('no-thumb');
+              if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+                thumb.style.setProperty('--thumb-ratio', image.naturalWidth + ' / ' + image.naturalHeight);
+              }
+            });
+            image.addEventListener('error', function() {
+              thumb.classList.add('no-thumb');
+            });
+            thumb.appendChild(image);
+          }
+
+          var text = document.createElement('span');
+          text.className = 'pdf-card-label';
+          text.textContent = fileLabel(path);
+
+          card.appendChild(thumb);
+          card.appendChild(text);
+          card.addEventListener('click', function() { loadAt(index); });
+          picker.appendChild(card);
+        });
+      }
+
       function loadAt(index) {
         if (!pdfSet.length) return;
         var safeIndex = ((index % pdfSet.length) + pdfSet.length) % pdfSet.length;
         var current = pdfSet[safeIndex];
-        label.textContent = (safeIndex + 1) + ' / ' + pdfSet.length + '  ' + fileLabel(current);
-        prevBtn.disabled = pdfSet.length < 2;
-        nextBtn.disabled = pdfSet.length < 2;
-        frame.src = encodeURI(current) + '#view=FitH';
+        frame.src = encodeURI(current.src) + '#view=FitH';
         frame.dataset.index = String(safeIndex);
+        renderPicker(safeIndex);
       }
 
-      if (src) {
-        frame.src = encodeURI(src) + '#view=FitH';
-      } else {
-        toolbar.hidden = false;
-        var start = Number(params.get('i') || 0);
-        if (!Number.isFinite(start)) start = 0;
-        loadAt(start);
-        prevBtn.addEventListener('click', function() {
-          loadAt(Number(frame.dataset.index || 0) - 1);
-        });
-        nextBtn.addEventListener('click', function() {
-          loadAt(Number(frame.dataset.index || 0) + 1);
-        });
-      }
+      loadAt(0);
 
       frame.addEventListener('error', function() {
         frame.hidden = true;
         fallback.hidden = false;
-        fallback.innerHTML = 'Could not load PDF.<br/>Try <code>projects.html?src=images/projects_pdfs/pdf-pages.pdf</code>.';
+        fallback.innerHTML = 'Could not load PDF.<br/>Select a thumbnail above or try <code>projects.html?src=images/projects_pdfs/pdf-pages.pdf</code>.';
       });
     })();
   </script>

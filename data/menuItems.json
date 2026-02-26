@@ -10,5 +10,5 @@
   { "img": "new-menu items/playlist-green.png",  "href": "playlist.html",  "x": 83.6, "y": 27.48, "scale": 2.5, "iconSize": "clamp(160px, 20vw, 360px)", "ariaLabel": "playlist" },
 
   { "svg": "images/icons/bomb.svg",     "href": "bomb.html",     "x": 100, "y": 36.4, "scale": 2.5, "iconSize": "clamp(20px, 4.67vw, 120px)", "ariaLabel": "bomb",     "color": "#000" },
-  { "svg": "images/icons/cassette.svg", "href": "cassette.html", "x": 98.87, "y": 51.78, "scale": 2.5, "iconSize": "clamp(20px, 5.55vw, 120px)", "ariaLabel": "cassette", "color": "#000" }
+  { "svg": "images/icons/cassette.svg", "href": "tapes.html", "x": 98.87, "y": 51.78, "scale": 2.5, "iconSize": "clamp(20px, 5.55vw, 120px)", "ariaLabel": "tapes", "color": "#000" }
 ]

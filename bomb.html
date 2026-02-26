@@ -11,17 +11,75 @@
       display: grid;
       place-items: center;
       background: #000;
+      cursor: pointer;
     }
     .bomb-wrap img {
       max-width: 100%;
       max-height: 100%;
       display: block;
+      pointer-events: none;
+      user-select: none;
     }
   </style>
 </head>
 <body>
-  <div data-modal-root class="bomb-wrap">
+  <div data-modal-root class="bomb-wrap" id="bombWrap" role="button" tabindex="0" aria-label="Open random link">
     <img src="images/IMG_8475.GIF" alt="Bomb animation" />
   </div>
+  <script>
+    (function() {
+      // Paste your redirect links here.
+      var REDIRECT_URLS = [
+        'https://pudding.cool/2022/06/aztec-gods/',
+        'https://musicmap.info/',
+        'https://www.vitsoe.com/us/about/good-design',
+        'https://www.archivepdf.net/scans/kapital/aloha-brigade-lookbook',
+        'https://www.archivepdf.net/scans/undercover/tgraphics',
+        'images/IMG_8475.GIF'
+      ];
+
+      var wrap = document.getElementById('bombWrap');
+      var lastIndex = -1;
+
+      function getRandomIndex(max) {
+        if (max <= 1) return 0;
+        var next = Math.floor(Math.random() * max);
+        while (next === lastIndex) {
+          next = Math.floor(Math.random() * max);
+        }
+        return next;
+      }
+
+      function openRandomLink() {
+        if (!REDIRECT_URLS.length) return;
+        var idx = getRandomIndex(REDIRECT_URLS.length);
+        lastIndex = idx;
+        var target = REDIRECT_URLS[idx];
+        if (!target) return;
+        var isGif = /\.gif($|[?#])/i.test(target);
+        var features = isGif
+          ? 'popup=yes,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no,width=900,height=700,left=120,top=80'
+          : 'noopener,noreferrer';
+        var win = window.open(target, '_blank', features);
+        if (!win) {
+          var a = document.createElement('a');
+          a.href = target;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+      }
+
+      wrap.addEventListener('click', openRandomLink);
+      wrap.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openRandomLink();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

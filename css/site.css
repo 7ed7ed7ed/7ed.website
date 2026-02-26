@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 /* Base (pure white background; no outlines) */
 :root { --menu-scale: 1.08; }
 
@@ -346,30 +348,6 @@ body.intro-light #introVideo { background: #fff; }
   outline-offset: 6px;
 }
 
-#player-orb .orb-star {
-  position: absolute;
-  width: 28%;
-  height: 28%;
-  border: 0;
-  padding: 0;
-  background: rgba(0,0,0,0);
-  cursor: pointer;
-  display: none;
-  z-index: 2;
-}
-#player-orb .orb-star:focus-visible {
-  outline: 2px solid #000;
-  outline-offset: 4px;
-}
-#player-orb[data-phase="star"] .orb-star { display: block; }
-#player-orb .orb-star--north { top: 0%; left: 36%; }
-#player-orb .orb-star--south { bottom: -4%; left: 36%; }
-#player-orb .orb-star--east { top: 36%; right: -4%; }
-#player-orb .orb-star--west { top: 36%; left: -4%; }
-#player-orb .orb-star--orbit { top: 6%; left: 12%; width: 24%; }
-
-#player-orb[data-mode="playstars"] .orb-core { background-image: url('../images/icons/playstars.png'); }
-#player-orb[data-mode="stars"] .orb-core { background-image: url('../images/icons/stars.png'); }
 #player-orb[data-mode="playgods"] .orb-core { background-image: url('../images/icons/playgods.png'); }
 #player-orb[data-mode="gods"] .orb-core { background-image: url('../images/icons/gods.png'); }
 
@@ -429,7 +407,7 @@ body.intro-light #introVideo { background: #fff; }
   max-width: 360px;
   padding: 0;
   color: #000;
-  font: 600 clamp(12px, 2vw, 20px) / 1.2 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font: 600 clamp(12px, 2vw, 20px) / 1.2 "Press Start 2P", "Courier New", monospace;
   letter-spacing: 0.06em;
   text-transform: lowercase;
   line-height: 1.2;

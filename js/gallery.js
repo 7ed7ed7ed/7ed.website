@@ -6,6 +6,12 @@ const DATA_URLS = [
 
 const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'bmp', 'heic', 'heif', 'tif', 'tiff']);
 const VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'mov', 'm4v', 'ogv', 'ogg']);
+const SHUFFLE_GROUPS = [
+  ['s19.jpg', 's20.jpg', 's21.jpg'],
+  ['s18.jpg', 's24.jpg', 's23.jpg'],
+  ['s13.png', 's14.png', 's15.png', 's16.png'],
+  ['s17.jpg', 's22.jpg']
+];
 
 let items = [];
 let activeIndex = 0;
@@ -86,6 +92,38 @@ function formatUpdatedDate(value) {
 function clampIndex(idx) {
   if (!items.length) return 0;
   return ((idx % items.length) + items.length) % items.length;
+}
+
+function shuffle(arr) {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function shuffleWithGroups(allItems) {
+  const byName = new Map(allItems.map((item) => [fileNameOf(item?.src || ''), item]));
+  const usedNames = new Set();
+  const units = [];
+
+  SHUFFLE_GROUPS.forEach((group) => {
+    const block = group
+      .map((name) => byName.get(name))
+      .filter(Boolean);
+    if (!block.length) return;
+    block.forEach((item) => usedNames.add(fileNameOf(item.src)));
+    units.push(block);
+  });
+
+  allItems.forEach((item) => {
+    const name = fileNameOf(item?.src || '');
+    if (usedNames.has(name)) return;
+    units.push([item]);
+  });
+
+  return shuffle(units).flat();
 }
 
 function openLargeWindow(item) {
@@ -358,7 +396,7 @@ async function initGallery(base = document) {
   applyResponsiveScale();
   try {
     const loaded = await loadItems();
-    items = loaded.items;
+    items = shuffleWithGroups(loaded.items);
     if (refs.updated) refs.updated.textContent = formatUpdatedDate(loaded.lastUpdated);
     if (!items.length) {
       refs.counter && (refs.counter.textContent = '0 of 0');

@@ -57,7 +57,6 @@ const CORE_BTN      = document.getElementById('orb-core');
 const PREV_BTN      = document.getElementById('orb-prev');
 const NEXT_BTN      = document.getElementById('orb-next');
 const EXIT_BTN      = document.getElementById('orb-exit');
-const STAR_BTNS     = Array.from(document.querySelectorAll('.orb-star'));
 const TRACK_WRAP    = document.querySelector('.orb-track');
 const TRACK_TEXT    = document.getElementById('orb-track-text');
 const WIDGET_IFRAME = document.getElementById('sc-widget');
@@ -82,8 +81,14 @@ let suppressClick   = false;
 let positionMs      = 0;
 let pendingSeekMs   = 0;
 let marqueeNeedsRestart = false;
+let widgetSessionId = 0;
 let orbDevPanel = null;
 let volumeLockTimer = null;
+let autoplayWatchdogTimer = null;
+let autoplayStallCount = 0;
+
+const AUTOPLAY_WATCHDOG_MS = 5000;
+const AUTOPLAY_STALL_MAX = 4;
 
 // ---------- helpers ----------
 function widgetSrc(scUrl, autoPlay = false) {
@@ -124,12 +129,8 @@ function buildOrder(startIndex = 0) {
     cursor = 0;
     return;
   }
-  const indices = Array.from({ length }, (_, i) => i);
-  indices.splice(startIndex, 1);
-  shuffleArray(indices);
-  indices.unshift(startIndex);
-  playlistOrder = indices;
-  cursor = 0;
+  playlistOrder = Array.from({ length }, (_, i) => i);
+  cursor = Math.min(Math.max(startIndex, 0), length - 1);
   saveState();
 }
 
@@ -145,6 +146,8 @@ function loadTrackByIndex(trackIndex, { autoplay = false, position = 0 } = {}) {
   pendingSeekMs = Math.max(0, position || 0);
   positionMs = pendingSeekMs;
   initWidget(playlist[trackIndex].url, autoplay);
+  if (autoplay) scheduleAutoplayWatchdog(trackIndex);
+  else clearAutoplayWatchdog();
   saveState();
 }
 
@@ -170,10 +173,8 @@ function computeMode() {
 
 function modeLabel(mode) {
   switch (mode) {
-    case 'playstars':
     case 'playgods':
       return 'Pause music';
-    case 'stars':
     case 'gods':
       return 'Play music';
     default: return 'Play music';
@@ -282,6 +283,22 @@ function applyPendingSeek() {
   pendingSeekMs = 0;
 }
 
+function clearAutoplayWatchdog() {
+  if (!autoplayWatchdogTimer) return;
+  clearTimeout(autoplayWatchdogTimer);
+  autoplayWatchdogTimer = null;
+}
+
+function scheduleAutoplayWatchdog(trackIndex) {
+  clearAutoplayWatchdog();
+  autoplayWatchdogTimer = setTimeout(() => {
+    if (index !== trackIndex || isPlaying) return;
+    autoplayStallCount += 1;
+    if (autoplayStallCount > AUTOPLAY_STALL_MAX) return;
+    goNext({ autoplay: true });
+  }, AUTOPLAY_WATCHDOG_MS);
+}
+
 function applyVolume() {
   if (!SCWidget) return;
   try { SCWidget.setVolume(DEFAULT_VOLUME); } catch {}
@@ -377,6 +394,7 @@ function requestPause() {
     return;
   }
   pendingAction = null;
+  clearAutoplayWatchdog();
   try { SCWidget.pause(); } catch {}
 }
 
@@ -401,15 +419,9 @@ function handleOrbitClick(direction) {
   else goNext({ autoplay });
 }
 
-function handleStarClick(e) {
-  ensureGodsPhase();
-  e.preventDefault();
-  e.stopPropagation();
-}
-
 function onPointerDown(e) {
   if (!ORB || e.button !== 0) return;
-  if (e.target.closest('.orb-star, .orb-hotspot, #orb-exit')) return;
+  if (e.target.closest('.orb-hotspot, #orb-exit')) return;
   const rect = ORB.getBoundingClientRect();
   dragState = {
     pointerId: e.pointerId,
@@ -458,6 +470,8 @@ function onPointerUp(e) {
 // ---------- widget wiring ----------
 function initWidget(url, autoPlay = false) {
   if (!WIDGET_IFRAME) return;
+  widgetSessionId += 1;
+  const sessionId = widgetSessionId;
   isReady = false;
   if (autoPlay) pendingAction = 'play';
   else if (pendingAction !== 'pause') pendingAction = null;
@@ -465,12 +479,12 @@ function initWidget(url, autoPlay = false) {
   WIDGET_IFRAME.src = widgetSrc(url, autoPlay);
   setTimeout(() => {
     SCWidget = window.SC?.Widget?.(WIDGET_IFRAME) || null;
-    bindWidgetEvents();
+    bindWidgetEvents(sessionId);
     setTimeout(() => applyVolume(), 150);
   }, 0);
 }
 
-function bindWidgetEvents() {
+function bindWidgetEvents(sessionId) {
   if (!SCWidget || !window.SC?.Widget?.Events) return;
   const Events = window.SC.Widget.Events;
 
@@ -480,6 +494,7 @@ function bindWidgetEvents() {
   SCWidget.unbind?.(Events.FINISH);
 
   SCWidget.bind(Events.READY, () => {
+    if (sessionId !== widgetSessionId) return;
     isReady = true;
     applyVolume();
     if (pendingAction === 'play') {
@@ -489,33 +504,35 @@ function bindWidgetEvents() {
       pendingAction = null;
       SCWidget.pause();
     }
-    SCWidget.getCurrentSound((sound) => {
-      if (sound?.title) setTrackTitle(sound.title);
-    });
+    setTrackTitle(playlist[index]?.title || playlist[index]?.url || '—');
     applyPendingSeek();
   });
 
   SCWidget.bind(Events.PLAY, () => {
+    if (sessionId !== widgetSessionId) return;
     updatePlayingState(true);
+    autoplayStallCount = 0;
+    clearAutoplayWatchdog();
     applyVolume();
     startVolumeLock();
-    SCWidget.getCurrentSound((sound) => {
-      if (sound?.title) setTrackTitle(sound.title);
-    });
+    setTrackTitle(playlist[index]?.title || playlist[index]?.url || '—');
     applyPendingSeek();
   });
 
   SCWidget.bind(Events.PAUSE, () => {
+    if (sessionId !== widgetSessionId) return;
     updatePlayingState(false);
     stopVolumeLock();
   });
 
   SCWidget.bind(Events.FINISH, () => {
+    if (sessionId !== widgetSessionId) return;
     stopVolumeLock();
     goNext({ autoplay: true });
   });
 
   SCWidget.bind(Events.PLAY_PROGRESS, (e) => {
+    if (sessionId !== widgetSessionId) return;
     if (typeof e?.currentPosition === 'number') {
       positionMs = e.currentPosition;
     }
@@ -528,7 +545,6 @@ function wireUI() {
   PREV_BTN?.addEventListener('click', () => handleOrbitClick('prev'));
   NEXT_BTN?.addEventListener('click', () => handleOrbitClick('next'));
   EXIT_BTN?.addEventListener('click', exitToStars);
-  STAR_BTNS.forEach((btn) => btn.addEventListener('click', handleStarClick));
 
   if (ORB) {
     ORB.addEventListener('pointerdown', onPointerDown);
@@ -762,37 +778,7 @@ async function boot() {
   try {
     playlist = await fetchPlaylist();
     if (!Array.isArray(playlist) || playlist.length === 0) return;
-    const restored = restoreState();
-
-    if (restored && Array.isArray(restored.playlistOrder) && restored.playlistOrder.length === playlist.length) {
-      const validOrder = restored.playlistOrder.every((n) => Number.isInteger(n) && n >= 0 && n < playlist.length);
-      if (validOrder) {
-        playlistOrder = [...restored.playlistOrder];
-        cursor = Math.min(Math.max(restored.cursor ?? 0, 0), playlistOrder.length - 1);
-        index = playlistOrder[cursor] ?? 0;
-        phase = 'gods';
-        isPlaying = false;
-        positionMs = Math.max(0, restored.positionMs ?? 0);
-        pendingSeekMs = positionMs;
-        syncVisualState();
-        const hasWidgetSrc = WIDGET_IFRAME && WIDGET_IFRAME.src && !WIDGET_IFRAME.src.endsWith('about:blank');
-        if (hasWidgetSrc) {
-          SCWidget = window.SC?.Widget?.(WIDGET_IFRAME) || null;
-          if (SCWidget) {
-            bindWidgetEvents();
-            applyPendingSeek();
-            requestPause();
-          }
-        } else {
-          loadTrackByIndex(index, { autoplay: false, position: positionMs });
-        }
-        saveState();
-        return;
-      }
-    }
-
-    const initialIndex = Math.floor(Math.random() * playlist.length);
-    buildOrder(initialIndex);
+    buildOrder(0);
     phase = 'gods';
     isPlaying = false;
     positionMs = 0;
@@ -867,7 +853,7 @@ window.SC_MBAR = {
     return {
       index,
       isPlaying,
-      title: (TRACK_TEXT?.textContent || playlist[index]?.title || '').toString()
+      title: (playlist[index]?.title || TRACK_TEXT?.textContent || '').toString()
     };
   }
 };
