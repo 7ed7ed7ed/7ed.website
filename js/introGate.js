@@ -249,16 +249,38 @@ if (alreadySeen) {
   // Open the single window (info)
   try { window.__OPEN_SINGLE_INFO__?.(); } catch {}
 } else {
-  // First load: keep intro video inline and make menu interactive immediately.
-  body.classList.remove('intro-dark');
-  body.classList.add('intro-light');
-  menu.classList.add('show');
+  // First load: wait for user click, then play intro video.
+  body.classList.add('intro-dark');
+  body.classList.remove('intro-light');
+  menu.classList.remove('show');
+  if (loopGif) loopGif.classList.remove('is-visible');
   syncMenuToCanvasBox();
 
+  const startIntro = async () => {
+    if (hasStarted || isRevealing) return;
+    hasStarted = true;
+    if (!video) {
+      endIntroFlow();
+      return;
+    }
+    try {
+      video.classList.remove('is-hidden');
+      video.muted = false;
+      video.volume = 0.25;
+      await video.play();
+    } catch (err) {
+      console.warn('[intro] play failed:', err?.name || err);
+      endIntroFlow();
+    }
+  };
+
+  // Primary start target is the stage; global fallback ensures any first click starts it.
+  stage?.addEventListener('click', startIntro, { once: true });
+  window.addEventListener('pointerdown', startIntro, { capture: true, once: true });
+
   if (video) {
-    // Autoplay is most reliable when muted; keep it non-blocking for interactions.
-    video.muted = true;
-    video.play().catch(() => {});
+    video.addEventListener('ended', endIntroFlow);
+    video.addEventListener('error', endIntroFlow);
   }
 }
 
