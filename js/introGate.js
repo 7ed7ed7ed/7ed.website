@@ -263,6 +263,7 @@ if (alreadySeen) {
     if (isRevealing) return;
     if (hasStarted) {
       // Second click skips intro by design.
+      allowForcedReveal = true;
       endIntroFlow();
       return;
     }
