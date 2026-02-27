@@ -299,6 +299,19 @@ body.intro-light #introVideo { background: #fff; }
 /* hide the video instantly once we reveal (no fade) */
 #introVideo.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
+/* Interaction safety overrides:
+   keep media non-blocking and ensure menu is clickable when visible. */
+#loopGif,
+#introVideo {
+  pointer-events: none;
+}
+.menu {
+  z-index: 2;
+}
+.menu.show {
+  pointer-events: auto;
+}
+
 /* ===== FLOATING PLAYER ICON ===== */
 :root {
   --orb-base-size: clamp(100px, 26vw, 240px);
