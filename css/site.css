@@ -316,8 +316,8 @@ body.intro-light #introVideo { background: #fff; }
 :root {
   --orb-base-size: clamp(100px, 26vw, 240px);
   /* Starting position for the music orb */
-  --orb-left: 428.72px;
-  --orb-top: 110.31px;
+  --orb-left: 389.80px;
+  --orb-top: 92.49px;
 }
 
 #player-orb {

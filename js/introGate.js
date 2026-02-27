@@ -160,7 +160,7 @@ const MODAL_PAGE_MAP = {
     css: ['css/info.css'],
     scripts: ['js/info-hotspot.js'],
     // Open the info page nearly full size for readability
-    window: { width: 1440, height: 809, left: 0, top: 25, resizable: true },
+    window: { width: 1250, height: 697, left: 92, top: 120, resizable: true },
     init(root) {
       if (typeof window.initInfoHotspot === 'function') window.initInfoHotspot(root);
     }
