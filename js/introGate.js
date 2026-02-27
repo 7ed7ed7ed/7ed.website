@@ -260,7 +260,11 @@ if (alreadySeen) {
 
   const startIntro = async () => {
     if (isRevealing) return;
-    if (hasStarted) return;
+    if (hasStarted) {
+      // User-controlled skip on second click.
+      endIntroFlow();
+      return;
+    }
     hasStarted = true;
     introStartedAt = Date.now();
     if (!video) {
@@ -284,22 +288,21 @@ if (alreadySeen) {
     }
   };
 
-  // Primary start target is the stage; global fallback ensures any first click starts it.
-  stage?.addEventListener('click', startIntro);
-  window.addEventListener('pointerdown', startIntro, { capture: true, once: true });
+  // Use pointerdown only so mouseup/click does not immediately trigger a skip.
+  stage?.addEventListener('pointerdown', startIntro);
 
   if (video) {
-    const MIN_INTRO_MS = 2500;
+    const MIN_INTRO_SECONDS = 2.5;
     const maybeReveal = () => {
-      const elapsed = Date.now() - (introStartedAt || Date.now());
-      if (elapsed >= MIN_INTRO_MS) {
+      const played = Number(video.currentTime || 0);
+      if (played >= MIN_INTRO_SECONDS) {
         endIntroFlow();
         return;
       }
-      // If intro ended/errored too early, retry once muted instead of skipping.
+      // If intro ended/errored too early, restart instead of auto-skipping.
       try {
         video.currentTime = 0;
-        video.muted = true;
+        video.muted = false;
         video.play().catch(() => {});
       } catch {}
     };
