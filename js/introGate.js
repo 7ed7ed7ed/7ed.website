@@ -208,6 +208,7 @@ let hasStarted = false;   // first click starts with audio
 let isRevealing = false;  // guard
 let revealTriggeredByClick = false; // whether reveal came from a user gesture
 let introStartedAt = 0;
+let allowForcedReveal = false;
 let preOpened = [];       // pre-opened native popups [{ win, path }]
 let preOpenedDone = false;
 
@@ -264,6 +265,7 @@ if (alreadySeen) {
     hasStarted = true;
     introStartedAt = Date.now();
     if (!video) {
+      allowForcedReveal = true;
       endIntroFlow();
       return;
     }
@@ -281,6 +283,7 @@ if (alreadySeen) {
         await video.play();
       } catch (retryErr) {
         console.warn('[intro] retry failed:', retryErr?.name || retryErr);
+        allowForcedReveal = true;
         endIntroFlow();
       }
     }
@@ -307,12 +310,17 @@ window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if (k === 'm') video.muted = !video.muted;
   if (k === ' ') { e.preventDefault(); if (video.paused) video.play(); else video.pause(); }
-  if (k === 's') endIntroFlow(); // skip
+  if (k === 's') {
+    allowForcedReveal = true;
+    endIntroFlow(); // skip
+  }
 });
 
 /* ===== reveal (NO FADE—just pop) ===== */
 function endIntroFlow() {
   if (isRevealing) return;
+  // Do not reveal early unless intro really ended or playback failed.
+  if (video && hasStarted && !video.ended && !allowForcedReveal) return;
   isRevealing = true;
 
   menu.classList.add('show');
