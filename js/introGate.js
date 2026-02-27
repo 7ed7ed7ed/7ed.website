@@ -252,8 +252,22 @@ if (alreadySeen) {
   // fresh visit: start dark letterbox until reveal
   body.classList.add('intro-dark');
 
+  // Failsafe: unlock on first user gesture anywhere, not just stage clicks.
+  const unlockOnGesture = () => {
+    if (menu.classList.contains('show') || isRevealing) return;
+    revealTriggeredByClick = true;
+    endIntroFlow();
+  };
+  window.addEventListener('pointerdown', unlockOnGesture, { capture: true, once: true });
+  window.addEventListener('touchstart', unlockOnGesture, { capture: true, once: true });
+
+  // Failsafe: never stay blocked if gesture listeners are missed.
+  setTimeout(() => {
+    if (!menu.classList.contains('show') && !isRevealing) endIntroFlow();
+  }, 1800);
+
   if (stage && video) {
-    // first click starts video with sound, second click reveals
+    // First click starts video audio and immediately unlocks the site.
     stage.addEventListener('click', async () => {
       if (menu.classList.contains('show') || isRevealing) return;
 
@@ -264,6 +278,8 @@ if (alreadySeen) {
           video.volume = 0.25;
           await video.play();
           hasStarted = true;
+          revealTriggeredByClick = true;
+          endIntroFlow();
         } catch (err) {
           console.warn('[intro] play failed:', err?.name || err);
           // If intro media cannot play (missing/blocked URL), avoid trapping on black screen.
@@ -271,10 +287,10 @@ if (alreadySeen) {
           revealTriggeredByClick = true;
           endIntroFlow();
         }
-        return; // don’t skip on first click
+        return;
       }
 
-      // second click -> reveal
+      // fallback: if somehow still locked after first interaction, unlock now
       revealTriggeredByClick = true;
       endIntroFlow();
     });
