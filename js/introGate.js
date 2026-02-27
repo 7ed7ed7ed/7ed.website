@@ -222,6 +222,30 @@ try { store = window.sessionStorage; } catch { store = null; }
 const alreadySeen = store?.getItem(INTRO_KEY) === '1';
 const loopMedia = (loopGif instanceof HTMLMediaElement) ? loopGif : null;
 
+// Register a first-gesture fallback before async setup so the page never feels frozen.
+let firstGestureHandled = false;
+const handleFirstGesture = async () => {
+  if (firstGestureHandled || isRevealing) return;
+  firstGestureHandled = true;
+  if (!video) {
+    endIntroFlow();
+    return;
+  }
+  try {
+    video.classList.remove('is-hidden');
+    video.muted = false;
+    video.volume = 0.25;
+    await video.play();
+    setTimeout(() => {
+      if (!isRevealing && !menu.classList.contains('show')) endIntroFlow();
+    }, 2500);
+  } catch {
+    endIntroFlow();
+  }
+};
+window.addEventListener('pointerdown', handleFirstGesture, { capture: true, once: true });
+window.addEventListener('touchstart', handleFirstGesture, { capture: true, once: true });
+
 function showLoopMedia() {
   if (!loopGif) return;
   loopGif.classList.add('is-visible');
