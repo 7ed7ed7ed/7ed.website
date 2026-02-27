@@ -262,8 +262,8 @@ if (alreadySeen) {
   const startIntro = async () => {
     if (isRevealing) return;
     if (hasStarted) {
-      // If intro is paused mid-way, let another click resume playback.
-      try { if (video?.paused) await video.play(); } catch {}
+      // Second click skips intro by design.
+      endIntroFlow();
       return;
     }
     hasStarted = true;
@@ -274,16 +274,20 @@ if (alreadySeen) {
     }
     try {
       video.classList.remove('is-hidden');
-      // Chrome is stricter with media + gesture timing. Start muted for reliability.
       video.currentTime = 0;
-      video.muted = true;
+      // First click should start intro with sound.
+      video.muted = false;
       video.volume = 0.25;
       await video.play();
-      // Unmute right after playback starts so first click still yields audible intro.
-      video.muted = false;
     } catch (err) {
-      console.warn('[intro] play failed, waiting for another user gesture:', err?.name || err);
-      hasStarted = false;
+      console.warn('[intro] unmuted play failed, retrying muted:', err?.name || err);
+      try {
+        video.muted = true;
+        await video.play();
+      } catch (retryErr) {
+        console.warn('[intro] muted retry failed:', retryErr?.name || retryErr);
+        hasStarted = false;
+      }
     }
   };
 
