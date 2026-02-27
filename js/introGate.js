@@ -1,4 +1,4 @@
-import { loadMenu } from './menuLoader.js';
+import { loadMenu } from './menuloader.js';
 
 const body  = document.body;
 const stage = document.getElementById('stage');
