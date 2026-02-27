@@ -279,6 +279,8 @@ if (alreadySeen) {
       video.muted = true;
       video.volume = 0.25;
       await video.play();
+      // Unmute right after playback starts so first click still yields audible intro.
+      video.muted = false;
     } catch (err) {
       console.warn('[intro] play failed, waiting for another user gesture:', err?.name || err);
       hasStarted = false;
