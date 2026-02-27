@@ -222,30 +222,6 @@ try { store = window.sessionStorage; } catch { store = null; }
 const alreadySeen = store?.getItem(INTRO_KEY) === '1';
 const loopMedia = (loopGif instanceof HTMLMediaElement) ? loopGif : null;
 
-// Register a first-gesture fallback before async setup so the page never feels frozen.
-let firstGestureHandled = false;
-const handleFirstGesture = async () => {
-  if (firstGestureHandled || isRevealing) return;
-  firstGestureHandled = true;
-  if (!video) {
-    endIntroFlow();
-    return;
-  }
-  try {
-    video.classList.remove('is-hidden');
-    video.muted = false;
-    video.volume = 0.25;
-    await video.play();
-    setTimeout(() => {
-      if (!isRevealing && !menu.classList.contains('show')) endIntroFlow();
-    }, 2500);
-  } catch {
-    endIntroFlow();
-  }
-};
-window.addEventListener('pointerdown', handleFirstGesture, { capture: true, once: true });
-window.addEventListener('touchstart', handleFirstGesture, { capture: true, once: true });
-
 function showLoopMedia() {
   if (!loopGif) return;
   loopGif.classList.add('is-visible');
@@ -296,13 +272,15 @@ if (alreadySeen) {
       video.muted = false;
       video.volume = 0.25;
       await video.play();
-      // If playback stalls, do not trap the UI behind intro state.
-      setTimeout(() => {
-        if (!isRevealing && (video.paused || video.readyState < 2)) endIntroFlow();
-      }, 1500);
     } catch (err) {
-      console.warn('[intro] play failed:', err?.name || err);
-      endIntroFlow();
+      console.warn('[intro] unmuted play failed, retrying muted:', err?.name || err);
+      try {
+        video.muted = true;
+        await video.play();
+      } catch (retryErr) {
+        console.warn('[intro] muted play failed:', retryErr?.name || retryErr);
+        endIntroFlow();
+      }
     }
   };
 
