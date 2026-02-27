@@ -334,7 +334,6 @@ body.intro-light #introVideo { background: #fff; }
 }
 #player-orb[data-phase="star"] { --orb-phase-scale: 1.5; }
 #player-orb[data-phase="gods"] { --orb-phase-scale: 2; }
-#player-orb[data-phase="gods"] { --orb-left: 27px; --orb-top: 4px; }
 #player-orb[hidden] { display: none !important; }
 
 #player-orb button {
