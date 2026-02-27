@@ -257,7 +257,11 @@ if (alreadySeen) {
   syncMenuToCanvasBox();
 
   const startIntro = async () => {
-    if (hasStarted || isRevealing) return;
+    if (isRevealing) return;
+    if (hasStarted) {
+      endIntroFlow();
+      return;
+    }
     hasStarted = true;
     if (!video) {
       endIntroFlow();
@@ -268,6 +272,10 @@ if (alreadySeen) {
       video.muted = false;
       video.volume = 0.25;
       await video.play();
+      // If playback stalls, do not trap the UI behind intro state.
+      setTimeout(() => {
+        if (!isRevealing && (video.paused || video.readyState < 2)) endIntroFlow();
+      }, 1500);
     } catch (err) {
       console.warn('[intro] play failed:', err?.name || err);
       endIntroFlow();
@@ -275,7 +283,7 @@ if (alreadySeen) {
   };
 
   // Primary start target is the stage; global fallback ensures any first click starts it.
-  stage?.addEventListener('click', startIntro, { once: true });
+  stage?.addEventListener('click', startIntro);
   window.addEventListener('pointerdown', startIntro, { capture: true, once: true });
 
   if (video) {
