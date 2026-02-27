@@ -260,11 +260,7 @@ if (alreadySeen) {
 
   const startIntro = async () => {
     if (isRevealing) return;
-    if (hasStarted) {
-      // User-controlled skip on second click.
-      endIntroFlow();
-      return;
-    }
+    if (hasStarted) return;
     hasStarted = true;
     introStartedAt = Date.now();
     if (!video) {
