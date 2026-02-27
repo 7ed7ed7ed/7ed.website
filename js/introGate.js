@@ -249,55 +249,16 @@ if (alreadySeen) {
   // Open the single window (info)
   try { window.__OPEN_SINGLE_INFO__?.(); } catch {}
 } else {
-  // fresh visit: start dark letterbox until reveal
-  body.classList.add('intro-dark');
+  // First load: keep intro video inline and make menu interactive immediately.
+  body.classList.remove('intro-dark');
+  body.classList.add('intro-light');
+  menu.classList.add('show');
+  syncMenuToCanvasBox();
 
-  // Failsafe: unlock on first user gesture anywhere, not just stage clicks.
-  const unlockOnGesture = () => {
-    if (menu.classList.contains('show') || isRevealing) return;
-    revealTriggeredByClick = true;
-    endIntroFlow();
-  };
-  window.addEventListener('pointerdown', unlockOnGesture, { capture: true, once: true });
-  window.addEventListener('touchstart', unlockOnGesture, { capture: true, once: true });
-
-  // Failsafe: never stay blocked if gesture listeners are missed.
-  setTimeout(() => {
-    if (!menu.classList.contains('show') && !isRevealing) endIntroFlow();
-  }, 1800);
-
-  if (stage && video) {
-    // First click starts video audio and immediately unlocks the site.
-    stage.addEventListener('click', async () => {
-      if (menu.classList.contains('show') || isRevealing) return;
-
-      if (!hasStarted) {
-        try {
-          // Popups are pre-opened on pointerdown; do not open more here
-          video.muted = false;
-          video.volume = 0.25;
-          await video.play();
-          hasStarted = true;
-          revealTriggeredByClick = true;
-          endIntroFlow();
-        } catch (err) {
-          console.warn('[intro] play failed:', err?.name || err);
-          // If intro media cannot play (missing/blocked URL), avoid trapping on black screen.
-          hasStarted = true;
-          revealTriggeredByClick = true;
-          endIntroFlow();
-        }
-        return;
-      }
-
-      // fallback: if somehow still locked after first interaction, unlock now
-      revealTriggeredByClick = true;
-      endIntroFlow();
-    });
-
-    // auto reveal at natural end
-    video.addEventListener('ended', endIntroFlow);
-    video.addEventListener('error', endIntroFlow);
+  if (video) {
+    // Autoplay is most reliable when muted; keep it non-blocking for interactions.
+    video.muted = true;
+    video.play().catch(() => {});
   }
 }
 
@@ -1195,10 +1156,7 @@ function setupDesktopWindows() {
     document.body.appendChild(btn);
   };
 
-  // When the intro completes, open the info window only
-  document.addEventListener('intro:done', () => {
-    openSingleInfoWindow();
-  }, { once: true });
+  // Keep first load clean: do not auto-open windows on intro completion.
 
   // open internal links anywhere in-window by default; Shift+click forces window even if marked
   document.addEventListener('click', (e) => {
@@ -1243,7 +1201,8 @@ function setupDesktopWindows() {
     }
   });
 
-  restoreState();
+  // Avoid restoring prior session windows that can capture clicks unexpectedly.
+  // restoreState();
 
   // Expose single opener globally so top-level branch can invoke it when intro is skipped
   try { window.__OPEN_SINGLE_INFO__ = openSingleInfoWindow; } catch {}
