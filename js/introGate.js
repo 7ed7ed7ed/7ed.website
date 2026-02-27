@@ -269,16 +269,18 @@ if (alreadySeen) {
     }
     try {
       video.classList.remove('is-hidden');
-      video.muted = false;
+      // Chrome is stricter with media + gesture timing. Start muted for reliability.
+      video.muted = true;
       video.volume = 0.25;
       await video.play();
     } catch (err) {
-      console.warn('[intro] unmuted play failed, retrying muted:', err?.name || err);
+      console.warn('[intro] play failed, retrying from start:', err?.name || err);
       try {
+        video.currentTime = 0;
         video.muted = true;
         await video.play();
       } catch (retryErr) {
-        console.warn('[intro] muted play failed:', retryErr?.name || retryErr);
+        console.warn('[intro] retry failed:', retryErr?.name || retryErr);
         endIntroFlow();
       }
     }
@@ -288,22 +290,14 @@ if (alreadySeen) {
   stage?.addEventListener('pointerdown', startIntro);
 
   if (video) {
-    const MIN_INTRO_SECONDS = 2.5;
-    const maybeReveal = () => {
-      const played = Number(video.currentTime || 0);
-      if (played >= MIN_INTRO_SECONDS) {
-        endIntroFlow();
-        return;
-      }
-      // If intro ended/errored too early, restart instead of auto-skipping.
+    video.addEventListener('ended', endIntroFlow);
+    video.addEventListener('error', () => {
       try {
         video.currentTime = 0;
-        video.muted = false;
+        video.muted = true;
         video.play().catch(() => {});
       } catch {}
-    };
-    video.addEventListener('ended', maybeReveal);
-    video.addEventListener('error', maybeReveal);
+    });
   }
 }
 
