@@ -261,31 +261,27 @@ if (alreadySeen) {
 
   const startIntro = async () => {
     if (isRevealing) return;
-    if (hasStarted) return;
+    if (hasStarted) {
+      // If intro is paused mid-way, let another click resume playback.
+      try { if (video?.paused) await video.play(); } catch {}
+      return;
+    }
     hasStarted = true;
     introStartedAt = Date.now();
     if (!video) {
-      allowForcedReveal = true;
-      endIntroFlow();
+      hasStarted = false;
       return;
     }
     try {
       video.classList.remove('is-hidden');
       // Chrome is stricter with media + gesture timing. Start muted for reliability.
+      video.currentTime = 0;
       video.muted = true;
       video.volume = 0.25;
       await video.play();
     } catch (err) {
-      console.warn('[intro] play failed, retrying from start:', err?.name || err);
-      try {
-        video.currentTime = 0;
-        video.muted = true;
-        await video.play();
-      } catch (retryErr) {
-        console.warn('[intro] retry failed:', retryErr?.name || retryErr);
-        allowForcedReveal = true;
-        endIntroFlow();
-      }
+      console.warn('[intro] play failed, waiting for another user gesture:', err?.name || err);
+      hasStarted = false;
     }
   };
 
