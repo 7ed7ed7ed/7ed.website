@@ -1136,7 +1136,8 @@ function setupDesktopWindows() {
     const config = MODAL_PAGE_MAP[path] || {};
     const title = link.textContent || link.getAttribute('aria-label') || '';
     event.preventDefault();
-    openPopupWindow(path, title, config);
+    const ok = openPopupWindow(path, title, config);
+    if (!ok) openWindow(path, config, title);
   };
 
   menu.addEventListener('click', handleMenuClick);
