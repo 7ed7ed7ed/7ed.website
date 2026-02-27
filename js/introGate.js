@@ -207,6 +207,7 @@ const MODAL_PAGE_MAP = {
 let hasStarted = false;   // first click starts with audio
 let isRevealing = false;  // guard
 let revealTriggeredByClick = false; // whether reveal came from a user gesture
+let introStartedAt = 0;
 let preOpened = [];       // pre-opened native popups [{ win, path }]
 let preOpenedDone = false;
 
@@ -219,7 +220,8 @@ try {
 const INTRO_KEY = 'introSeen';
 let store = null;
 try { store = window.sessionStorage; } catch { store = null; }
-const alreadySeen = store?.getItem(INTRO_KEY) === '1';
+// Always show intro flow on page load; do not auto-skip based on session state.
+const alreadySeen = false;
 const loopMedia = (loopGif instanceof HTMLMediaElement) ? loopGif : null;
 
 function showLoopMedia() {
@@ -258,11 +260,9 @@ if (alreadySeen) {
 
   const startIntro = async () => {
     if (isRevealing) return;
-    if (hasStarted) {
-      endIntroFlow();
-      return;
-    }
+    if (hasStarted) return;
     hasStarted = true;
+    introStartedAt = Date.now();
     if (!video) {
       endIntroFlow();
       return;
@@ -289,8 +289,22 @@ if (alreadySeen) {
   window.addEventListener('pointerdown', startIntro, { capture: true, once: true });
 
   if (video) {
-    video.addEventListener('ended', endIntroFlow);
-    video.addEventListener('error', endIntroFlow);
+    const MIN_INTRO_MS = 2500;
+    const maybeReveal = () => {
+      const elapsed = Date.now() - (introStartedAt || Date.now());
+      if (elapsed >= MIN_INTRO_MS) {
+        endIntroFlow();
+        return;
+      }
+      // If intro ended/errored too early, retry once muted instead of skipping.
+      try {
+        video.currentTime = 0;
+        video.muted = true;
+        video.play().catch(() => {});
+      } catch {}
+    };
+    video.addEventListener('ended', maybeReveal);
+    video.addEventListener('error', maybeReveal);
   }
 }
 
