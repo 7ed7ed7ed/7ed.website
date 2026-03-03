@@ -88,6 +88,7 @@ let volumeLockTimer = null;
 let autoplayWatchdogTimer = null;
 let autoplayStallCount = 0;
 let trackAdvanceLock = false;
+let desiredAutoplay = false;
 
 const AUTOPLAY_WATCHDOG_MS = 5000;
 const AUTOPLAY_STALL_MAX = 4;
@@ -145,6 +146,7 @@ function loadTrackByIndex(trackIndex, { autoplay = false, position = 0 } = {}) {
   index = trackIndex;
   durationMs = 0;
   trackAdvanceLock = false;
+  desiredAutoplay = !!autoplay;
   const track = playlist[trackIndex];
   setTrackTitle(track?.title || track?.url || '—');
   pendingSeekMs = Math.max(0, position || 0);
@@ -296,8 +298,13 @@ function clearAutoplayWatchdog() {
 function scheduleAutoplayWatchdog(trackIndex) {
   clearAutoplayWatchdog();
   autoplayWatchdogTimer = setTimeout(() => {
-    if (index !== trackIndex || isPlaying || trackAdvanceLock) return;
+    if (index !== trackIndex || isPlaying || trackAdvanceLock || !desiredAutoplay) return;
     autoplayStallCount += 1;
+    if (autoplayStallCount <= 2) {
+      requestPlay();
+      scheduleAutoplayWatchdog(trackIndex);
+      return;
+    }
     if (autoplayStallCount > AUTOPLAY_STALL_MAX) return;
     advanceToNextTrack();
   }, AUTOPLAY_WATCHDOG_MS);
@@ -311,6 +318,7 @@ function isNearTrackEnd(position, duration) {
 function advanceToNextTrack() {
   if (trackAdvanceLock) return;
   trackAdvanceLock = true;
+  desiredAutoplay = true;
   stopVolumeLock();
   goNext({ autoplay: true });
 }
@@ -410,6 +418,7 @@ function requestPause() {
     return;
   }
   pendingAction = null;
+  desiredAutoplay = false;
   clearAutoplayWatchdog();
   try { SCWidget.pause(); } catch {}
 }
@@ -532,6 +541,7 @@ function bindWidgetEvents(sessionId) {
 
   SCWidget.bind(Events.PLAY, () => {
     if (sessionId !== widgetSessionId) return;
+    desiredAutoplay = true;
     updatePlayingState(true);
     autoplayStallCount = 0;
     clearAutoplayWatchdog();
@@ -546,6 +556,7 @@ function bindWidgetEvents(sessionId) {
     const wasPlaying = isPlaying;
     updatePlayingState(false);
     stopVolumeLock();
+    if (!trackAdvanceLock) desiredAutoplay = false;
     if (!wasPlaying || trackAdvanceLock) return;
     try {
       SCWidget.getPosition((positionValue) => {
@@ -586,6 +597,13 @@ function bindWidgetEvents(sessionId) {
     }
     applyVolume();
   });
+
+  if (Events.PLAY_ERROR) {
+    SCWidget.bind(Events.PLAY_ERROR, () => {
+      if (sessionId !== widgetSessionId || trackAdvanceLock) return;
+      scheduleAutoplayWatchdog(index);
+    });
+  }
 }
 
 function wireUI() {
