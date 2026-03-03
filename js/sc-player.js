@@ -79,6 +79,7 @@ let phase           = 'gods';
 let dragState       = null;
 let suppressClick   = false;
 let positionMs      = 0;
+let durationMs      = 0;
 let pendingSeekMs   = 0;
 let marqueeNeedsRestart = false;
 let widgetSessionId = 0;
@@ -86,6 +87,7 @@ let orbDevPanel = null;
 let volumeLockTimer = null;
 let autoplayWatchdogTimer = null;
 let autoplayStallCount = 0;
+let trackAdvanceLock = false;
 
 const AUTOPLAY_WATCHDOG_MS = 5000;
 const AUTOPLAY_STALL_MAX = 4;
@@ -141,6 +143,8 @@ function currentTrackIndex() {
 function loadTrackByIndex(trackIndex, { autoplay = false, position = 0 } = {}) {
   if (!playlist[trackIndex]) return;
   index = trackIndex;
+  durationMs = 0;
+  trackAdvanceLock = false;
   const track = playlist[trackIndex];
   setTrackTitle(track?.title || track?.url || '—');
   pendingSeekMs = Math.max(0, position || 0);
@@ -292,11 +296,23 @@ function clearAutoplayWatchdog() {
 function scheduleAutoplayWatchdog(trackIndex) {
   clearAutoplayWatchdog();
   autoplayWatchdogTimer = setTimeout(() => {
-    if (index !== trackIndex || isPlaying) return;
+    if (index !== trackIndex || isPlaying || trackAdvanceLock) return;
     autoplayStallCount += 1;
     if (autoplayStallCount > AUTOPLAY_STALL_MAX) return;
-    goNext({ autoplay: true });
+    advanceToNextTrack();
   }, AUTOPLAY_WATCHDOG_MS);
+}
+
+function isNearTrackEnd(position, duration) {
+  if (!Number.isFinite(position) || !Number.isFinite(duration) || duration <= 0) return false;
+  return position >= Math.max(0, duration - 2000);
+}
+
+function advanceToNextTrack() {
+  if (trackAdvanceLock) return;
+  trackAdvanceLock = true;
+  stopVolumeLock();
+  goNext({ autoplay: true });
 }
 
 function applyVolume() {
@@ -506,6 +522,12 @@ function bindWidgetEvents(sessionId) {
     }
     setTrackTitle(playlist[index]?.title || playlist[index]?.url || '—');
     applyPendingSeek();
+    try {
+      SCWidget.getDuration((value) => {
+        if (sessionId !== widgetSessionId) return;
+        durationMs = Number(value) || 0;
+      });
+    } catch {}
   });
 
   SCWidget.bind(Events.PLAY, () => {
@@ -521,20 +543,46 @@ function bindWidgetEvents(sessionId) {
 
   SCWidget.bind(Events.PAUSE, () => {
     if (sessionId !== widgetSessionId) return;
+    const wasPlaying = isPlaying;
     updatePlayingState(false);
     stopVolumeLock();
+    if (!wasPlaying || trackAdvanceLock) return;
+    try {
+      SCWidget.getPosition((positionValue) => {
+        if (sessionId !== widgetSessionId || trackAdvanceLock) return;
+        const position = Number(positionValue) || 0;
+        const localDuration = durationMs;
+        if (isNearTrackEnd(position, localDuration)) {
+          advanceToNextTrack();
+          return;
+        }
+        try {
+          SCWidget.getDuration((durationValue) => {
+            if (sessionId !== widgetSessionId || trackAdvanceLock) return;
+            const duration = Number(durationValue) || 0;
+            durationMs = duration;
+            if (isNearTrackEnd(position, duration)) {
+              advanceToNextTrack();
+            }
+          });
+        } catch {}
+      });
+    } catch {}
   });
 
   SCWidget.bind(Events.FINISH, () => {
     if (sessionId !== widgetSessionId) return;
-    stopVolumeLock();
-    goNext({ autoplay: true });
+    advanceToNextTrack();
   });
 
   SCWidget.bind(Events.PLAY_PROGRESS, (e) => {
     if (sessionId !== widgetSessionId) return;
     if (typeof e?.currentPosition === 'number') {
       positionMs = e.currentPosition;
+      if (!trackAdvanceLock && isNearTrackEnd(positionMs, durationMs)) {
+        advanceToNextTrack();
+        return;
+      }
     }
     applyVolume();
   });
