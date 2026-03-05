@@ -89,9 +89,15 @@ let autoplayWatchdogTimer = null;
 let autoplayStallCount = 0;
 let trackAdvanceLock = false;
 let desiredAutoplay = false;
+let playbackMonitorTimer = null;
+let playbackLastPosMs = -1;
+let playbackStallTicks = 0;
 
 const AUTOPLAY_WATCHDOG_MS = 5000;
 const AUTOPLAY_STALL_MAX = 4;
+const PLAYBACK_MONITOR_MS = 2500;
+const PLAYBACK_STALL_TICKS = 3;
+const END_STALL_GAP_MS = 3500;
 
 // ---------- helpers ----------
 function widgetSrc(scUrl, autoPlay = false) {
@@ -147,6 +153,7 @@ function loadTrackByIndex(trackIndex, { autoplay = false, position = 0 } = {}) {
   durationMs = 0;
   trackAdvanceLock = false;
   desiredAutoplay = !!autoplay;
+  stopPlaybackMonitor();
   const track = playlist[trackIndex];
   setTrackTitle(track?.title || track?.url || '—');
   pendingSeekMs = Math.max(0, position || 0);
@@ -295,6 +302,55 @@ function clearAutoplayWatchdog() {
   autoplayWatchdogTimer = null;
 }
 
+function resetPlaybackMonitorState() {
+  playbackLastPosMs = -1;
+  playbackStallTicks = 0;
+}
+
+function stopPlaybackMonitor() {
+  if (!playbackMonitorTimer) return;
+  clearInterval(playbackMonitorTimer);
+  playbackMonitorTimer = null;
+}
+
+function startPlaybackMonitor(sessionId, trackIndex) {
+  stopPlaybackMonitor();
+  resetPlaybackMonitorState();
+  playbackMonitorTimer = setInterval(() => {
+    if (!SCWidget || trackAdvanceLock) return;
+    if (sessionId !== widgetSessionId || index !== trackIndex) {
+      stopPlaybackMonitor();
+      return;
+    }
+    if (!desiredAutoplay && !isPlaying) return;
+    try {
+      SCWidget.getPosition((positionValue) => {
+        if (sessionId !== widgetSessionId || index !== trackIndex || trackAdvanceLock) return;
+        const position = Number(positionValue) || 0;
+        const last = playbackLastPosMs;
+        playbackLastPosMs = position;
+
+        if (!Number.isFinite(durationMs) || durationMs <= 0) {
+          try {
+            SCWidget.getDuration((durationValue) => {
+              if (sessionId !== widgetSessionId || index !== trackIndex) return;
+              durationMs = Number(durationValue) || 0;
+            });
+          } catch {}
+          return;
+        }
+
+        const nearEnd = position >= Math.max(0, durationMs - END_STALL_GAP_MS);
+        const progressed = last < 0 || Math.abs(position - last) > 400;
+        playbackStallTicks = progressed ? 0 : playbackStallTicks + 1;
+        if (nearEnd && playbackStallTicks >= PLAYBACK_STALL_TICKS) {
+          advanceToNextTrack();
+        }
+      });
+    } catch {}
+  }, PLAYBACK_MONITOR_MS);
+}
+
 function scheduleAutoplayWatchdog(trackIndex) {
   clearAutoplayWatchdog();
   autoplayWatchdogTimer = setTimeout(() => {
@@ -319,6 +375,7 @@ function advanceToNextTrack() {
   if (trackAdvanceLock) return;
   trackAdvanceLock = true;
   desiredAutoplay = true;
+  stopPlaybackMonitor();
   stopVolumeLock();
   goNext({ autoplay: true });
 }
@@ -390,6 +447,8 @@ function ensureGodsPhase() {
 
 function exitToStars() {
   phase = 'gods';
+  desiredAutoplay = false;
+  stopPlaybackMonitor();
   updatePlayingState(false);
   syncVisualState();
   clampOrbToViewport();
@@ -408,6 +467,7 @@ function requestPlay() {
     return;
   }
   pendingAction = null;
+  desiredAutoplay = true;
   applyVolume();
   try { SCWidget.play(); } catch {}
 }
@@ -420,6 +480,7 @@ function requestPause() {
   pendingAction = null;
   desiredAutoplay = false;
   clearAutoplayWatchdog();
+  stopPlaybackMonitor();
   try { SCWidget.pause(); } catch {}
 }
 
@@ -547,6 +608,7 @@ function bindWidgetEvents(sessionId) {
     clearAutoplayWatchdog();
     applyVolume();
     startVolumeLock();
+    startPlaybackMonitor(sessionId, index);
     setTrackTitle(playlist[index]?.title || playlist[index]?.url || '—');
     applyPendingSeek();
   });
@@ -556,7 +618,6 @@ function bindWidgetEvents(sessionId) {
     const wasPlaying = isPlaying;
     updatePlayingState(false);
     stopVolumeLock();
-    if (!trackAdvanceLock) desiredAutoplay = false;
     if (!wasPlaying || trackAdvanceLock) return;
     try {
       SCWidget.getPosition((positionValue) => {
