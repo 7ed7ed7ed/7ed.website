@@ -901,28 +901,28 @@ function setupOrbDevPanel() {
 }
 
 // ---------- boot flow ----------
-async function boot() {
+async function boot({ autoplay = false } = {}) {
   try {
     playlist = await fetchPlaylist();
     if (!Array.isArray(playlist) || playlist.length === 0) return;
     buildOrder(0);
     phase = 'gods';
-    isPlaying = false;
+    isPlaying = !!autoplay;
     positionMs = 0;
     pendingSeekMs = 0;
     syncVisualState();
-    loadTrackByIndex(currentTrackIndex(), { autoplay: false, position: 0 });
+    loadTrackByIndex(currentTrackIndex(), { autoplay, position: 0 });
   } catch (e) {
     console.error('[sc-player] boot error', e);
   }
 }
 
-function initPlayerOnce() {
+function initPlayerOnce({ autoplayOnBoot = false } = {}) {
   if (!ORB) return;
   if (!ORB.hasAttribute('data-initialized')) {
     ORB.setAttribute('data-initialized', '1');
     phase = 'gods';
-    updatePlayingState(false);
+    updatePlayingState(autoplayOnBoot);
     syncVisualState();
     restoreOrbPosition();
     // Make the orb visible before measuring; clamp on next frame so layout is ready
@@ -930,7 +930,7 @@ function initPlayerOnce() {
     requestAnimationFrame(() => clampOrbToViewport());
     wireUI();
     setupOrbDevPanel();
-    boot();
+    boot({ autoplay: autoplayOnBoot });
   }
 }
 
@@ -939,11 +939,11 @@ const INTRO_ALREADY_DONE = !!window.__INTRO_DONE__;
 
 if (!IS_POPUP) {
   if (SHOULD_WAIT_FOR_INTRO && !INTRO_ALREADY_DONE) {
-    document.addEventListener('intro:done', () => initPlayerOnce(), { once: true });
+    document.addEventListener('intro:done', () => initPlayerOnce({ autoplayOnBoot: true }), { once: true });
   } else if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPlayerOnce, { once: true });
+    document.addEventListener('DOMContentLoaded', () => initPlayerOnce({ autoplayOnBoot: SHOULD_WAIT_FOR_INTRO && INTRO_ALREADY_DONE }), { once: true });
   } else {
-    initPlayerOnce();
+    initPlayerOnce({ autoplayOnBoot: SHOULD_WAIT_FOR_INTRO && INTRO_ALREADY_DONE });
   }
 }
 

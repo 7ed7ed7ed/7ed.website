@@ -38,11 +38,22 @@ function rectOfTarget() {
     // if hidden or zero-sized, fall back to stage
     if ((r.width > 0 && r.height > 0) && !video.classList.contains('is-hidden')) return r;
   }
-  return (stage ? stage.getBoundingClientRect() : { left:0, top:0, width:window.innerWidth, height:window.innerHeight });
+  if (stage) return stage.getBoundingClientRect();
+  const vv = window.visualViewport;
+  if (vv) {
+    return {
+      left: vv.offsetLeft || 0,
+      top: vv.offsetTop || 0,
+      width: vv.width || window.innerWidth,
+      height: vv.height || window.innerHeight
+    };
+  }
+  return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
 }
 
 function fitRectToDesign(rect) {
   const scale = Math.min(
+    1,
     rect.width / MENU_DESIGN_WIDTH,
     rect.height / MENU_DESIGN_HEIGHT
   );
@@ -149,6 +160,8 @@ function openRandomBombDestination() {
 window.addEventListener('resize',            () => setTimeout(syncMenuToCanvasBox, 50));
 window.addEventListener('orientationchange', () => setTimeout(syncMenuToCanvasBox, 150));
 window.addEventListener('fullscreenchange',  syncMenuToCanvasBox);
+window.visualViewport?.addEventListener('resize', () => setTimeout(syncMenuToCanvasBox, 30));
+window.visualViewport?.addEventListener('scroll', syncMenuToCanvasBox);
 requestAnimationFrame(syncMenuToCanvasBox);
 
 const MODAL_PAGE_MAP = {
