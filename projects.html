@@ -5,6 +5,8 @@
   <title>projects.</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="css/site.css" />
+  <link rel="preconnect" href="https://pub-d743d8d1f4af41bcaecd76b83ac5c384.r2.dev" crossorigin />
+  <link rel="dns-prefetch" href="//pub-d743d8d1f4af41bcaecd76b83ac5c384.r2.dev" />
   <style>
     html, body { height: 100%; }
     body { margin: 0; background: #111; color: #eee; }
@@ -96,6 +98,20 @@
     .pdf-frame { width: 100%; height: 100%; border: 0; background: #222; }
     .pdf-fallback { padding: 16px; line-height: 1.4; }
     .pdf-fallback a { color: #8ad; }
+    .pdf-loading {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font: 600 12px/1.2 Helvetica, Arial, sans-serif;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .18s ease;
+    }
+    .pdf-loading.show { opacity: 1; }
     @media (max-width: 900px) {
       .pdf-layout {
         grid-template-columns: 1fr;
@@ -117,7 +133,8 @@
 
       <section class="pdf-panel">
         <div id="pdfViewer" class="pdf-viewer">
-          <iframe id="pdfFrame" class="pdf-frame" title="Projects PDF" src="about:blank"></iframe>
+          <iframe id="pdfFrame" class="pdf-frame" title="Projects PDF" src="about:blank" loading="eager"></iframe>
+          <div id="pdfLoading" class="pdf-loading" aria-live="polite">Loading PDF…</div>
           <div id="pdfFallback" class="pdf-fallback" hidden></div>
         </div>
       </section>
@@ -134,7 +151,11 @@
     (function() {
       var frame = document.getElementById('pdfFrame');
       var fallback = document.getElementById('pdfFallback');
+      var loading = document.getElementById('pdfLoading');
       var picker = document.getElementById('pdfPicker');
+      var activeIndex = -1;
+      var loadTimeout = null;
+      var cards = [];
 
       // Add/remove entries in this set as needed.
       var pdfSet = [
@@ -167,6 +188,7 @@
 
       function renderPicker(activeIndex) {
         picker.innerHTML = '';
+        cards = [];
         pdfSet.forEach(function(item, index) {
           var path = item.src;
           var card = document.createElement('button');
@@ -200,25 +222,83 @@
           card.appendChild(text);
           card.addEventListener('click', function() { loadAt(index); });
           picker.appendChild(card);
+          cards.push(card);
+        });
+      }
+
+      function setActiveCard(index) {
+        cards.forEach(function(card, i) {
+          card.classList.toggle('is-active', i === index);
+        });
+      }
+
+      function viewerUrl(path) {
+        return encodeURI(path) + '#view=FitH';
+      }
+
+      function clearLoadTimeout() {
+        if (!loadTimeout) return;
+        clearTimeout(loadTimeout);
+        loadTimeout = null;
+      }
+
+      function showFallback(path) {
+        frame.hidden = true;
+        fallback.hidden = false;
+        loading.classList.remove('show');
+        fallback.innerHTML = [
+          'This PDF took too long to load in the embedded viewer.<br/>',
+          '<a href="' + encodeURI(path) + '" target="_blank" rel="noopener noreferrer">Open PDF in a new tab</a><br/>',
+          '<a href="' + encodeURI(path) + '" download>Download PDF</a>'
+        ].join('');
+      }
+
+      function prefetchRemaining(excludeIndex) {
+        pdfSet.forEach(function(item, i) {
+          if (i === excludeIndex) return;
+          var link = document.createElement('link');
+          link.rel = 'prefetch';
+          link.as = 'document';
+          link.href = encodeURI(item.src);
+          document.head.appendChild(link);
         });
       }
 
       function loadAt(index) {
         if (!pdfSet.length) return;
         var safeIndex = ((index % pdfSet.length) + pdfSet.length) % pdfSet.length;
+        if (safeIndex === activeIndex) return;
         var current = pdfSet[safeIndex];
-        frame.src = encodeURI(current.src) + '#view=FitH';
+        activeIndex = safeIndex;
+        clearLoadTimeout();
+        fallback.hidden = true;
+        frame.hidden = false;
+        loading.classList.add('show');
+        setActiveCard(safeIndex);
+        frame.src = viewerUrl(current.src);
         frame.dataset.index = String(safeIndex);
-        renderPicker(safeIndex);
+        loadTimeout = setTimeout(function() {
+          showFallback(current.src);
+        }, 12000);
       }
 
-      loadAt(0);
+      frame.addEventListener('load', function() {
+        clearLoadTimeout();
+        loading.classList.remove('show');
+        fallback.hidden = true;
+        frame.hidden = false;
+      });
 
       frame.addEventListener('error', function() {
-        frame.hidden = true;
-        fallback.hidden = false;
-        fallback.innerHTML = 'Could not load PDF.<br/>Select a thumbnail above or try <code>https://pub-d743d8d1f4af41bcaecd76b83ac5c384.r2.dev/cloudflare_R2/portfolio.pdf</code>.';
+        if (activeIndex < 0 || !pdfSet[activeIndex]) return;
+        clearLoadTimeout();
+        showFallback(pdfSet[activeIndex].src);
       });
+
+      renderPicker(0);
+      setActiveCard(0);
+      loadAt(0);
+      setTimeout(function() { prefetchRemaining(0); }, 800);
     })();
   </script>
 </body>
